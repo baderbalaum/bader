@@ -2,6 +2,9 @@ import { Injectable, inject } from '@angular/core';
 import { Database, ref, onValue, push, set, runTransaction } from '@angular/fire/database';
 import { Order } from '../models/order.model';
 import { AuthService } from './auth.service';
+import { environment } from '../../../environments/environment';
+
+const DEMO_KEY = 'toroz_demo_orders';
 
 const RECENT_KEY = 'toroz_recent_orders';
 
@@ -17,6 +20,7 @@ export class CustomerOrderService {
   private auth = inject(AuthService);
 
   async placeOrder(order: Omit<Order, 'id' | 'num'>): Promise<{ id: string; num: number }> {
+    if (environment.demo) return this.placeDemoOrder(order);
     const user = await this.auth.ensureCustomer();
     let num = 200;
     await runTransaction(ref(this.db, 'meta/lastOrderNum'), current => {
@@ -37,6 +41,7 @@ export class CustomerOrderService {
    * order leaves it. `null` means the order was cancelled, doesn't exist, or isn't theirs.
    */
   watchOrder(id: string, cb: (order: Order | null) => void): () => void {
+    if (environment.demo) return this.watchDemoOrder(id, cb);
     let stopped = false;
     let off: () => void = () => {};
     const other = (p: string) => (p === 'todayOrders' ? 'doneOrders' : 'todayOrders');
@@ -60,6 +65,38 @@ export class CustomerOrderService {
 
     this.auth.ensureCustomer().then(() => listen('todayOrders', false)).catch(() => cb(null));
     return () => { stopped = true; off(); };
+  }
+
+  // ── Offline demo: orders live on this device and move through the statuses on a timer ──
+
+  private demoOrders(): Record<string, Order> {
+    try { return JSON.parse(localStorage.getItem(DEMO_KEY) ?? '{}') as Record<string, Order>; }
+    catch { return {}; }
+  }
+
+  private placeDemoOrder(order: Omit<Order, 'id' | 'num'>): { id: string; num: number } {
+    const all = this.demoOrders();
+    const num = 201 + Object.keys(all).length;
+    const id = 'demo' + Date.now().toString(36);
+    all[id] = { ...order, id, num } as Order;
+    try { localStorage.setItem(DEMO_KEY, JSON.stringify(all)); } catch { /* storage unavailable */ }
+    this.rememberOrder({ id, num, createdAt: order.createdAt, total: order.total });
+    return { id, num };
+  }
+
+  private watchDemoOrder(id: string, cb: (order: Order | null) => void): () => void {
+    const tick = () => {
+      const o = this.demoOrders()[id];
+      if (!o) { cb(null); return; }
+      const sec = (Date.now() - o.createdAt) / 1000;
+      const status: Order['status'] =
+        sec < 8 ? 'new' : sec < 20 ? 'preparing' : sec < 30 ? 'ready'
+        : sec < 45 && o.type === 'delivery' ? 'on_the_way' : sec < 45 ? 'ready' : 'done';
+      cb({ ...o, status });
+    };
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
   }
 
   recentOrders(): RecentOrder[] {

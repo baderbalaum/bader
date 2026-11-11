@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, input, signal, computed, effect } from '@angular/core';
+import { DemoBannerComponent } from '../../../shared/components/demo-banner/demo-banner.component';
 import { RouterLink } from '@angular/router';
 import { CustomerOrderService } from '../../../core/services/customer-order.service';
 import { SettingsService } from '../../../core/services/settings.service';
@@ -23,7 +24,7 @@ const PICKUP_STEPS: Step[] = [
 @Component({
   selector: 'app-track',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [DemoBannerComponent, RouterLink],
   templateUrl: './track.component.html',
   styleUrl: './track.component.scss',
 })

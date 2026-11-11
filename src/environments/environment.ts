@@ -1,6 +1,8 @@
 export const environment = {
   production: false,
   /** Connect to local Firebase emulators (npm run dev:emulator). */
+  /** Offline demo: built-in menu, simulated orders, no Firebase calls (npm run build:demo). */
+  demo: false,
   useEmulators: false,
   firebase: {
   apiKey: "AIzaSyCgmdMmrruA_EblnE-SxTnZhd1JlnkIGNI",

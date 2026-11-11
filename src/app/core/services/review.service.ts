@@ -2,6 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Database, ref, onValue, get, set, runTransaction, query, limitToLast } from '@angular/fire/database';
 import { Review, ReviewStats } from '../models/review.model';
 import { AuthService } from './auth.service';
+import { environment } from '../../../environments/environment';
+
 
 const RATED_KEY = 'toroz_rated_orders';
 
@@ -15,7 +17,7 @@ export class ReviewService {
   private statsStarted = false;
 
   watchStats(): void {
-    if (this.statsStarted) return;
+    if (this.statsStarted || environment.demo) return;
     this.statsStarted = true;
     onValue(ref(this.db, 'reviewStats'), s => {
       const v = s.val() as ReviewStats | null;
@@ -30,12 +32,14 @@ export class ReviewService {
 
   async hasReview(orderId: string): Promise<boolean> {
     if (this.ratedLocally().includes(orderId)) return true;
+    if (environment.demo) return false;
     await this.auth.ensureCustomer();
     const snap = await get(ref(this.db, `reviews/${orderId}`));
     return snap.exists();
   }
 
   async submit(r: Review): Promise<void> {
+    if (environment.demo) { this.rememberRated(r.orderId); return; }
     await this.auth.ensureCustomer();
     const clean: Review = { ...r, stars: Math.min(5, Math.max(1, Math.round(r.stars))) };
     if (!clean.comment) delete clean.comment;
@@ -45,8 +49,12 @@ export class ReviewService {
       count: (cur?.count ?? 0) + 1,
       sum: (cur?.sum ?? 0) + clean.stars,
     }));
+    this.rememberRated(r.orderId);
+  }
+
+  private rememberRated(orderId: string): void {
     try {
-      localStorage.setItem(RATED_KEY, JSON.stringify([r.orderId, ...this.ratedLocally()].slice(0, 50)));
+      localStorage.setItem(RATED_KEY, JSON.stringify([orderId, ...this.ratedLocally()].slice(0, 50)));
     } catch { /* storage unavailable */ }
   }
 

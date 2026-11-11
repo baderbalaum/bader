@@ -2,6 +2,7 @@ import {
   Component, ChangeDetectionStrategy, inject, signal, computed, viewChild, HostListener,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { DemoBannerComponent } from '../../../shared/components/demo-banner/demo-banner.component';
 import { MenuService } from '../../../core/services/menu.service';
 import { SettingsService } from '../../../core/services/settings.service';
 import { CartService, FulfillmentMode } from '../../../core/services/cart.service';
@@ -20,7 +21,7 @@ const ACTIVE_ORDER_WINDOW_MS = 3 * 60 * 60 * 1000;
 @Component({
   selector: 'app-customer-menu',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ItemCustomizerComponent, ToastComponent, RouterLink],
+  imports: [DemoBannerComponent, ItemCustomizerComponent, ToastComponent, RouterLink],
   templateUrl: './customer-menu.component.html',
   styleUrl: './customer-menu.component.scss',
 })

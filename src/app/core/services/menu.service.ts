@@ -1,4 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { environment } from '../../../environments/environment';
+
 import { Database, ref, get, set, update, remove } from '@angular/fire/database';
 import { MenuData, MenuCategory, MenuItem, MenuMeta } from '../models/menu.model';
 
@@ -112,6 +114,7 @@ export class MenuService {
   }
 
   private async loadMenu(): Promise<void> {
+    if (environment.demo) { this._menu.set(MENU_SEED); this._menuLoading.set(false); return; }
     this._menuLoading.set(true);
     try {
       const snap = await get(ref(this.db, 'menu'));
@@ -122,6 +125,7 @@ export class MenuService {
   }
 
   private async loadMeta(): Promise<void> {
+    if (environment.demo) { this._meta.set(MENU_META_SEED); this._metaLoading.set(false); return; }
     this._metaLoading.set(true);
     try {
       const snap = await get(ref(this.db, 'menuMeta'));

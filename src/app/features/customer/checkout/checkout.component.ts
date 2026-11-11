@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed, viewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { DemoBannerComponent } from '../../../shared/components/demo-banner/demo-banner.component';
 import { CartService, FulfillmentMode } from '../../../core/services/cart.service';
 import { SettingsService } from '../../../core/services/settings.service';
 import { CustomerOrderService } from '../../../core/services/customer-order.service';
@@ -20,7 +21,7 @@ const PLACE_TIMEOUT_MS = 15000;
 @Component({
   selector: 'app-checkout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ToastComponent, LocationPickerComponent],
+  imports: [DemoBannerComponent, RouterLink, ToastComponent, LocationPickerComponent],
   templateUrl: './checkout.component.html',
   styleUrl: './checkout.component.scss',
 })

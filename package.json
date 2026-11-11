@@ -9,7 +9,8 @@
     "test": "ng test",
     "test:rules": "firebase emulators:exec --only database --project toroz-kiosk \"node test/database.rules.test.mjs\"",
     "emulators": "firebase emulators:start --only auth,database --project toroz-kiosk",
-    "dev:emulator": "ng serve -c emulator"
+    "dev:emulator": "ng serve -c emulator",
+    "build:demo": "ng build -c demo"
   },
   "private": true,
   "packageManager": "npm@11.1.0",

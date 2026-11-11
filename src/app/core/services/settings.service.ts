@@ -1,6 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Database, ref, onValue, set } from '@angular/fire/database';
 import { DEFAULT_SETTINGS, StoreSettings } from '../models/settings.model';
+import { environment } from '../../../environments/environment';
+
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
@@ -10,6 +12,7 @@ export class SettingsService {
   readonly loaded = signal(false);
 
   constructor() {
+    if (environment.demo) { this.loaded.set(true); return; }
     onValue(ref(this.db, 'settings'), snap => {
       const raw = snap.exists() ? (snap.val() as Partial<StoreSettings>) : {};
       // Firebase drops empty arrays, so a missing list means "use the default area".
