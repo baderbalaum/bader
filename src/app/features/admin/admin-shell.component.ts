@@ -9,11 +9,12 @@ import { KeyValuePipe } from '@angular/common';
 import { BrandMarkComponent } from '../../shared/components/brand-mark/brand-mark.component';
 import { ToastComponent } from '../../shared/components/toast/toast.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { StoreSettingsComponent } from './store-settings/store-settings.component';
 
 @Component({
   selector: 'app-admin-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [KeyValuePipe, BrandMarkComponent, ToastComponent, ConfirmDialogComponent],
+  imports: [KeyValuePipe, BrandMarkComponent, ToastComponent, ConfirmDialogComponent, StoreSettingsComponent],
   templateUrl: './admin-shell.component.html',
   styleUrl: './admin-shell.component.scss',
 })
@@ -41,6 +42,14 @@ export class AdminShellComponent {
   }
 
   lock(): void { this.pinSvc.lock(); }
+
+  // ── Store / delivery settings ──
+  readonly settingsOpen = signal(false);
+
+  onSettingsSaved(): void {
+    this.settingsOpen.set(false);
+    this.toast().show('ההגדרות נשמרו ✓', 'success');
+  }
 
   // ── Category ──
   readonly activeCat = signal<string | null>(null);

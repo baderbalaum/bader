@@ -1,0 +1,76 @@
+<div class="page">
+  <header class="bar">
+    <a class="back" routerLink="/order" aria-label="לתפריט">→</a>
+    <h1>מעקב הזמנה</h1>
+    <span></span>
+  </header>
+
+  @switch (order()) {
+    @case (undefined) {
+      <div class="empty"><span class="e-ico spin">⏳</span><h3>טוענים את ההזמנה...</h3></div>
+    }
+    @case (null) {
+      <div class="empty">
+        <span class="e-ico">😕</span>
+        <h3>ההזמנה לא נמצאה או בוטלה</h3>
+        <p>לכל שאלה אנחנו זמינים בטלפון</p>
+        <a class="btn gold" [href]="'tel:+' + settingsSvc.settings().phone" style="margin-top:18px">📞 {{ settingsSvc.displayPhone() }}</a>
+      </div>
+    }
+  }
+
+  @if (order(); as o) {
+    <section class="status-card" [class.done]="o.status === 'done'">
+      <div class="num">הזמנה #{{ o.num }}</div>
+      <h2>{{ headline() }}</h2>
+      @if (etaTime()) {
+        <div class="eta">
+          <span>{{ isDelivery() ? 'צפי הגעה' : 'מוכן בערך ב-' }}</span>
+          <b>{{ etaTime() }}</b>
+        </div>
+      }
+
+      <ol class="steps">
+        @for (st of steps(); track st.label; let i = $index) {
+          <li [class.reached]="i <= stepIndex()" [class.current]="i === stepIndex() && o.status !== 'done'">
+            <span class="ico">{{ st.icon }}</span>
+            <span class="lbl">{{ st.label }}</span>
+          </li>
+        }
+      </ol>
+    </section>
+
+    <section class="card">
+      @if (o.type === 'delivery' && o.address) {
+        <div class="kv"><span>📍 כתובת</span><b>{{ formatAddress(o.address) }}</b></div>
+      } @else {
+        <div class="kv"><span>🛍️ איסוף עצמי</span><b>{{ settingsSvc.settings().address || 'מהמסעדה' }}</b></div>
+      }
+      <div class="kv"><span>💳 תשלום</span><b>{{ o.payment }}</b></div>
+    </section>
+
+    <section class="card">
+      <h3>פירוט ההזמנה</h3>
+      @for (it of o.items ?? []; track $index) {
+        <div class="line">
+          <span class="q">{{ it.qty }}×</span>
+          <div class="t">
+            <div>{{ it.name }}</div>
+            @if (it.details?.length) { <small>{{ it.details!.join(' · ') }}</small> }
+          </div>
+          @if (it.unitPrice) { <span class="p">₪{{ it.unitPrice * it.qty }}</span> }
+        </div>
+      }
+      @if (o.deliveryFee) {
+        <div class="line fee"><span class="q"></span><div class="t">דמי משלוח</div><span class="p">₪{{ o.deliveryFee }}</span></div>
+      }
+      <div class="total"><span>סה״כ</span><b>₪{{ o.total }}</b></div>
+    </section>
+
+    <div class="actions">
+      <a class="btn" [href]="'tel:+' + settingsSvc.settings().phone">📞 התקשרו אלינו</a>
+      <a class="btn" [href]="whatsappLink()" target="_blank" rel="noopener">💬 וואטסאפ</a>
+    </div>
+    <a class="btn gold again" routerLink="/order">🍔 להזמנה חדשה</a>
+  }
+</div>

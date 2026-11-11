@@ -82,6 +82,7 @@
   }
   &.preparing { border-color: var(--blue); }
   &.ready { border-color: var(--green); box-shadow: 0 6px 28px rgba(76,175,114,.2); }
+  &.on_the_way { border-color: #b07de0; }
 }
 @keyframes cardIn {
   from { opacity: 0; transform: translateY(10px) scale(.98); }
@@ -122,13 +123,25 @@
   &.type-here    { background: rgba(76,175,114,.18); color: #95e6b3; }
   &.type-takeaway{ background: rgba(232,162,58,.18); color: var(--amber); }
   &.pay          { background: rgba(74,144,226,.18); color: #95c5f0; }
+  &.type-delivery{ background: rgba(176,125,224,.2); color: #d4b3f5; }
+  &.app          { background: rgba(200,150,46,.18); color: var(--gold2); }
+}
+
+.addr-row {
+  margin-top: 6px; display: flex; align-items: flex-start; gap: 6px;
+  font-size: .82rem; color: var(--cream); font-weight: 700;
+  .addr-text { flex: 1; small { display: block; color: var(--muted); font-weight: 500; margin-top: 2px; } }
+  .waze {
+    flex-shrink: 0; background: #33ccff; color: #062b3a; text-decoration: none;
+    font-size: .72rem; font-weight: 900; padding: 4px 10px; border-radius: 999px;
+  }
 }
 
 .cust-row {
   margin-top: 6px; font-size: .8rem; color: var(--cream);
   display: flex; align-items: center; gap: 6px;
   .cust-name { font-weight: 700; }
-  .cust-phone { color: var(--muted); }
+  .cust-phone { color: var(--muted); text-decoration: none; direction: ltr; }
 }
 
 .card-body { padding: 6px 14px 10px; max-height: 340px; overflow-y: auto; }

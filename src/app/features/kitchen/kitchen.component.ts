@@ -3,7 +3,7 @@ import {
   OnInit, OnDestroy, viewChild,
 } from '@angular/core';
 import { OrderService } from '../../core/services/order.service';
-import { Order, OrderStatus } from '../../core/models/order.model';
+import { Order, OrderStatus, formatAddress } from '../../core/models/order.model';
 import { BrandMarkComponent } from '../../shared/components/brand-mark/brand-mark.component';
 import { ToastComponent } from '../../shared/components/toast/toast.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -31,7 +31,7 @@ export class KitchenComponent implements OnInit, OnDestroy {
     const orders = this.orderSvc.todayOrders();
     const n = (s: OrderStatus) => orders.filter(o => o.status === s).length;
     return {
-      new: n('new'), preparing: n('preparing'), ready: n('ready'),
+      new: n('new'), preparing: n('preparing'), ready: n('ready') + n('on_the_way'),
       done: this.orderSvc.doneOrders().length,
       get active() { return this.new + this.preparing + this.ready; },
     };
@@ -41,8 +41,10 @@ export class KitchenComponent implements OnInit, OnDestroy {
     const f = this.filter();
     if (f === 'done') return this.orderSvc.doneOrders();
     const orders = this.orderSvc.todayOrders();
-    const list = f === 'active' ? orders : orders.filter(o => o.status === f);
-    const rank: Record<OrderStatus, number> = { new: 0, preparing: 1, ready: 2, done: 3 };
+    const list = f === 'active' ? orders
+      : f === 'ready' ? orders.filter(o => o.status === 'ready' || o.status === 'on_the_way')
+      : orders.filter(o => o.status === f);
+    const rank: Record<OrderStatus, number> = { new: 0, preparing: 1, ready: 2, on_the_way: 3, done: 4 };
     return [...list].sort((a, b) => rank[a.status] - rank[b.status] || a.createdAt - b.createdAt);
   });
 
@@ -82,7 +84,9 @@ export class KitchenComponent implements OnInit, OnDestroy {
 
   async setStatus(order: Order, status: OrderStatus): Promise<void> {
     await this.orderSvc.updateStatus(order.id, status);
-    const msgs: Partial<Record<OrderStatus, string>> = { preparing: 'התחלת הכנה', ready: 'ההזמנה מוכנה', done: 'ההזמנה נמסרה' };
+    const msgs: Partial<Record<OrderStatus, string>> = {
+      preparing: 'התחלת הכנה', ready: 'ההזמנה מוכנה', on_the_way: 'ההזמנה יצאה למשלוח', done: 'ההזמנה נמסרה',
+    };
     this.toast().show(msgs[status] ?? 'עודכן', 'success');
   }
 
@@ -120,6 +124,22 @@ export class KitchenComponent implements OnInit, OnDestroy {
   toggleSound(): void {
     this.soundOn.update(v => !v);
     localStorage.setItem('toroz_kitchen_sound', this.soundOn() ? '1' : '0');
+  }
+
+  readonly formatAddress = formatAddress;
+
+  typeLabel(order: Order): string {
+    return order.type === 'here' ? '🪑 לשבת פה' : order.type === 'delivery' ? '🛵 משלוח' : '🥡 לקחת';
+  }
+
+  wazeLink(order: Order): string {
+    const a = order.address;
+    return a ? `https://waze.com/ul?q=${encodeURIComponent(`${a.street}, ${a.city}`)}&navigate=yes` : '';
+  }
+
+  telLink(phone: string): string {
+    const d = phone.replace(/\D/g, '');
+    return 'tel:' + (d.startsWith('0') ? '+972' + d.slice(1) : d);
   }
 
   itemCount(order: Order): number {

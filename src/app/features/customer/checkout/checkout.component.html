@@ -1,0 +1,145 @@
+<div class="page">
+  <header class="bar">
+    <a class="back" routerLink="/order" aria-label="חזרה לתפריט">→</a>
+    <h1>הסל שלי</h1>
+    <span></span>
+  </header>
+
+  @if (cart.count() === 0) {
+    <div class="empty">
+      <span class="e-ico">🛒</span>
+      <h3>הסל ריק</h3>
+      <p>הוסיפו מנות מהתפריט כדי להזמין</p>
+      <a class="btn gold" routerLink="/order" style="margin-top:18px">לתפריט</a>
+    </div>
+  } @else {
+
+    <!-- ITEMS -->
+    <section class="card">
+      @for (it of cart.items(); track it.id) {
+        <div class="line">
+          <div class="line-text">
+            <div class="line-name">{{ it.name }}</div>
+            @if (it.details.length) {
+              <div class="line-details">{{ it.details.join(' · ') }}</div>
+            }
+            <div class="line-price">₪{{ it.unitPrice * it.qty }}</div>
+          </div>
+          <div class="qty">
+            <button (click)="cart.changeQty(it.id, 1)" aria-label="הוסף">+</button>
+            <span>{{ it.qty }}</span>
+            <button (click)="cart.changeQty(it.id, -1)" [attr.aria-label]="it.qty === 1 ? 'הסר' : 'הפחת'">
+              {{ it.qty === 1 ? '🗑' : '−' }}
+            </button>
+          </div>
+        </div>
+      }
+      <a class="more" routerLink="/order">+ להוסיף עוד מנות</a>
+    </section>
+
+    <!-- MODE -->
+    <section class="card">
+      <h2>איך תרצו לקבל?</h2>
+      <div class="mode-toggle">
+        <button [class.on]="isDelivery()" [disabled]="!s().deliveryEnabled" (click)="setMode('delivery')">
+          🛵 משלוח <small>{{ s().prepMinutes + s().deliveryMinutes }} דק׳</small>
+        </button>
+        <button [class.on]="!isDelivery()" [disabled]="!s().pickupEnabled" (click)="setMode('pickup')">
+          🛍️ איסוף עצמי <small>{{ s().prepMinutes }} דק׳</small>
+        </button>
+      </div>
+      @if (!isDelivery() && s().address) {
+        <p class="hint">📍 איסוף מ: {{ s().address }}</p>
+      }
+    </section>
+
+    <!-- DETAILS -->
+    <section class="card">
+      <h2>פרטים</h2>
+      <div class="grid2">
+        <div class="field" [class.err]="showErrors() && errors()['name']">
+          <label for="f-name">שם מלא</label>
+          <input id="f-name" type="text" autocomplete="name" [value]="name()" (input)="name.set(val($event))"/>
+          @if (showErrors() && errors()['name']) { <span class="msg">{{ errors()['name'] }}</span> }
+        </div>
+        <div class="field" [class.err]="showErrors() && errors()['phone']">
+          <label for="f-phone">טלפון</label>
+          <input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="05X-XXXXXXX" dir="ltr"
+                 [value]="phone()" (input)="phone.set(val($event))"/>
+          @if (showErrors() && errors()['phone']) { <span class="msg">{{ errors()['phone'] }}</span> }
+        </div>
+      </div>
+
+      @if (isDelivery()) {
+        <div class="field" [class.err]="showErrors() && errors()['city']">
+          <label for="f-city">עיר</label>
+          @if (s().cities.length) {
+            <select id="f-city" [value]="city()" (change)="city.set(val($event))">
+              <option value="">בחרו עיר</option>
+              @for (c of s().cities; track c) { <option [value]="c" [selected]="c === city()">{{ c }}</option> }
+            </select>
+          } @else {
+            <input id="f-city" type="text" autocomplete="address-level2" [value]="city()" (input)="city.set(val($event))"/>
+          }
+          @if (showErrors() && errors()['city']) { <span class="msg">{{ errors()['city'] }}</span> }
+        </div>
+        <div class="field" [class.err]="showErrors() && errors()['street']">
+          <label for="f-street">רחוב ומספר בית</label>
+          <input id="f-street" type="text" autocomplete="street-address" [value]="street()" (input)="street.set(val($event))"/>
+          @if (showErrors() && errors()['street']) { <span class="msg">{{ errors()['street'] }}</span> }
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="f-floor">קומה</label>
+            <input id="f-floor" type="text" inputmode="numeric" [value]="floor()" (input)="floor.set(val($event))"/>
+          </div>
+          <div class="field">
+            <label for="f-apt">דירה</label>
+            <input id="f-apt" type="text" inputmode="numeric" [value]="apartment()" (input)="apartment.set(val($event))"/>
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-anotes">הערות לשליח</label>
+          <input id="f-anotes" type="text" placeholder="קוד לבניין, כניסה מאחור..." [value]="addrNotes()" (input)="addrNotes.set(val($event))"/>
+        </div>
+      }
+
+      <div class="field">
+        <label for="f-note">הערה למטבח</label>
+        <textarea id="f-note" rows="2" placeholder="בלי בצל, רוטב בצד..." [value]="note()" (input)="note.set(val($event))"></textarea>
+      </div>
+    </section>
+
+    <!-- PAYMENT -->
+    <section class="card">
+      <h2>תשלום</h2>
+      <div class="pay-list">
+        @for (o of payOptions; track o.key) {
+          <button class="pay" [class.on]="pay() === o.key" (click)="pay.set(o.key)">
+            <span class="radio"></span><span class="ico">{{ o.icon }}</span>{{ o.label }}
+          </button>
+        }
+        <div class="pay soon"><span class="radio"></span><span class="ico">📱</span>תשלום אונליין באשראי<span class="badge">בקרוב</span></div>
+      </div>
+    </section>
+
+    <!-- SUMMARY -->
+    <section class="card summary">
+      <div class="row"><span>סכום ביניים</span><span>₪{{ cart.subtotal() }}</span></div>
+      @if (isDelivery()) {
+        <div class="row"><span>דמי משלוח</span><span>{{ fee() === 0 ? 'חינם' : '₪' + fee() }}</span></div>
+      }
+      <div class="row total"><span>סה״כ לתשלום</span><span>₪{{ total() }}</span></div>
+    </section>
+
+    <div class="submit-wrap">
+      @if (blocker()) { <div class="blocker">{{ blocker() }}</div> }
+      <button class="submit" [disabled]="!!blocker() || submitting()" (click)="placeOrder()">
+        @if (submitting()) { שולחים את ההזמנה... }
+        @else { <span>שליחת הזמנה</span><span class="sum">₪{{ total() }}</span> }
+      </button>
+    </div>
+  }
+</div>
+
+<app-toast #toast/>

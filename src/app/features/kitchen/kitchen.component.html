@@ -51,9 +51,10 @@
           </div>
         </div>
         <div class="order-meta">
-          <span class="chip" [class]="order.type === 'here' ? 'type-here' : 'type-takeaway'">
-            {{ order.type === 'here' ? '🪑 לשבת פה' : '🥡 לקחת' }}
-          </span>
+          <span class="chip" [class]="'type-' + order.type">{{ typeLabel(order) }}</span>
+          @if (order.source === 'app') {
+            <span class="chip app">📱 אפליקציה</span>
+          }
           @if (order.payment) {
             <span class="chip pay">💳 {{ order.payment }}</span>
           }
@@ -64,8 +65,18 @@
             <span>👤</span>
             <span class="cust-name">{{ order.customerName }}</span>
             @if (order.customerPhone) {
-              <span class="cust-phone">{{ order.customerPhone }}</span>
+              <a class="cust-phone" [href]="telLink(order.customerPhone)">{{ order.customerPhone }}</a>
             }
+          </div>
+        }
+        @if (order.type === 'delivery' && order.address) {
+          <div class="addr-row">
+            <span>📍</span>
+            <div class="addr-text">
+              <div>{{ formatAddress(order.address) }}</div>
+              @if (order.address.notes) { <small>{{ order.address.notes }}</small> }
+            </div>
+            <a class="waze" [href]="wazeLink(order)" target="_blank" rel="noopener">Waze</a>
           </div>
         }
       </div>
@@ -111,7 +122,14 @@
             <button class="btn green" (click)="setStatus(order, 'ready')">✓ סיים הכנה</button>
           }
           @case ('ready') {
-            <button class="btn primary" (click)="setStatus(order, 'done')">📤 נמסר</button>
+            @if (order.type === 'delivery') {
+              <button class="btn primary" (click)="setStatus(order, 'on_the_way')">🛵 יצא למשלוח</button>
+            } @else {
+              <button class="btn primary" (click)="setStatus(order, 'done')">📤 נמסר</button>
+            }
+          }
+          @case ('on_the_way') {
+            <button class="btn green" (click)="setStatus(order, 'done')">✓ נמסר ללקוח</button>
           }
           @case ('done') {
             <button class="btn" (click)="setStatus(order, 'preparing')">החזר לפעיל</button>

@@ -27,6 +27,7 @@
     <div class="topbar">
       <app-brand-mark [size]="40" subtitle="ADMIN — ניהול תפריט"/>
       <div class="topbar-actions">
+        <button class="btn gold" (click)="settingsOpen.set(true)">⚙ הגדרות משלוח</button>
         <button class="btn" (click)="exportJSON()">⬇ ייצוא JSON</button>
         <button class="btn" (click)="importFileInput.click()">⬆ ייבוא</button>
         <input #importFileInput type="file" accept="application/json" style="display:none" (change)="importJSON($event)"/>
@@ -268,3 +269,7 @@
 
 <app-toast #toast/>
 <app-confirm-dialog #confirm/>
+
+@if (settingsOpen()) {
+  <app-store-settings (closed)="settingsOpen.set(false)" (savedOk)="onSettingsSaved()"/>
+}

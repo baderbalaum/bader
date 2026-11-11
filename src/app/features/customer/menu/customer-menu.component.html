@@ -1,0 +1,145 @@
+<div class="page">
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-inner">
+      <img class="logo" src="Toroz.jpg" alt="טורוז מיט"/>
+      <h1>טורוז מיט</h1>
+      <p class="tagline">בשר אמיתי · טורטיות · בורגרים</p>
+      <span class="status" [class.closed]="!s().isOpen">
+        <span class="dot"></span>{{ s().isOpen ? 'פתוח עכשיו להזמנות' : 'סגור כרגע' }}
+      </span>
+    </div>
+  </header>
+
+  <main class="content">
+
+    @if (s().announcement) {
+      <div class="announce">📣 {{ s().announcement }}</div>
+    }
+
+    @if (activeOrder) {
+      <a class="active-order" [routerLink]="['/track', activeOrder.id]">
+        <span class="pulse"></span>
+        <span>ההזמנה שלך <b>#{{ activeOrder.num }}</b> בטיפול</span>
+        <span class="go">למעקב ←</span>
+      </a>
+    }
+
+    <!-- MODE + INFO -->
+    <section class="info-card">
+      <div class="mode-toggle" role="tablist">
+        <button role="tab" [class.on]="cart.mode() === 'delivery'" [disabled]="!s().deliveryEnabled"
+                [attr.aria-selected]="cart.mode() === 'delivery'" (click)="setMode('delivery')">
+          🛵 משלוח
+        </button>
+        <button role="tab" [class.on]="cart.mode() === 'pickup'" [disabled]="!s().pickupEnabled"
+                [attr.aria-selected]="cart.mode() === 'pickup'" (click)="setMode('pickup')">
+          🛍️ איסוף עצמי
+        </button>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <span class="v" dir="ltr">{{ eta() }}–{{ eta() + 10 }}</span>
+          <span class="l">דקות</span>
+        </div>
+        @if (cart.mode() === 'delivery') {
+          <div class="stat">
+            <span class="v">{{ fee() === 0 ? 'חינם' : '₪' + s().deliveryFee }}</span>
+            <span class="l">משלוח</span>
+          </div>
+          <div class="stat">
+            <span class="v">₪{{ s().minOrder }}</span>
+            <span class="l">מינימום</span>
+          </div>
+        } @else {
+          <div class="stat">
+            <span class="v">₪0</span>
+            <span class="l">בלי דמי משלוח</span>
+          </div>
+        }
+      </div>
+      @if (cart.mode() === 'delivery' && s().freeDeliveryOver > 0) {
+        <div class="free-hint">🎁 משלוח חינם בהזמנה מעל ₪{{ s().freeDeliveryOver }}</div>
+      }
+    </section>
+
+    <!-- CATEGORY TABS -->
+    <nav class="cat-tabs">
+      @for (c of categories(); track c.key) {
+        <button [id]="'tab-' + c.key" [class.on]="activeCat() === c.key" (click)="scrollTo(c.key)">
+          {{ c.cat.icon }} {{ c.cat.title }}
+        </button>
+      }
+    </nav>
+
+    <!-- MENU -->
+    @if (menuSvc.menuResource.isLoading()) {
+      @for (n of [1, 2, 3, 4]; track n) {
+        <div class="item skeleton"><div class="sk-text"></div><div class="sk-img"></div></div>
+      }
+    }
+
+    @for (c of categories(); track c.key) {
+      <section class="cat" [id]="'cat-' + c.key">
+        <h2>{{ c.cat.icon }} {{ c.cat.title }}</h2>
+        @if (c.cat.sub) { <p class="cat-sub">{{ c.cat.sub }}</p> }
+
+        <div class="items">
+          @for (item of c.items; track item.id) {
+            <article class="item" tabindex="0" (click)="open(item)" (keydown.enter)="open(item)">
+              <div class="item-text">
+                <h3>{{ item.name }}</h3>
+                @if (item.desc) { <p>{{ item.desc }}</p> }
+                <div class="price">
+                  @if (fromPrice(item) > 0) {
+                    @if (item.hasSizeOption || item.hasBurgerSize) { <small>החל מ-</small> }
+                    ₪{{ fromPrice(item) }}
+                  } @else {
+                    <small>לפי בחירה</small>
+                  }
+                </div>
+              </div>
+              <div class="item-media">
+                @if (item.imageUrl) {
+                  <img [src]="item.imageUrl" [alt]="item.name" loading="lazy"/>
+                } @else {
+                  <span class="emoji">{{ c.cat.icon }}</span>
+                }
+                <button class="add" [attr.aria-label]="'הוסף ' + item.name" (click)="quickAdd(item, $event)">+</button>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    }
+
+    <footer class="foot">
+      <img src="Toroz.jpg" alt=""/>
+      <div>
+        <b>טורוז מיט</b>
+        @if (s().address) { <span>📍 {{ s().address }}</span> }
+        <a [href]="'tel:+' + s().phone">📞 {{ settingsSvc.displayPhone() }}</a>
+      </div>
+    </footer>
+  </main>
+
+  <!-- CART BAR -->
+  @if (cart.count() > 0) {
+    <div class="cart-bar-wrap">
+      <button class="cart-bar" (click)="goCheckout()">
+        <span class="count">{{ cart.count() }}</span>
+        <span class="label">לסל שלי</span>
+        <span class="sum">₪{{ cart.subtotal() }}</span>
+      </button>
+    </div>
+  }
+</div>
+
+@if (customizerItem(); as it) {
+  <app-item-customizer [item]="it" [meta]="menuSvc.metaResource.value()"
+                       (added)="onAdded($event)" (closed)="customizerItem.set(null)"/>
+}
+
+<app-toast #toast/>
