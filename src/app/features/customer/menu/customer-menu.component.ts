@@ -6,6 +6,7 @@ import { MenuService } from '../../../core/services/menu.service';
 import { SettingsService } from '../../../core/services/settings.service';
 import { CartService, FulfillmentMode } from '../../../core/services/cart.service';
 import { CustomerOrderService } from '../../../core/services/customer-order.service';
+import { ReviewService } from '../../../core/services/review.service';
 import { MenuItem, MenuCategory } from '../../../core/models/menu.model';
 import { CartItem } from '../../../core/models/order.model';
 import { deliveryFeeFor, etaMinutesFor } from '../../../core/models/settings.model';
@@ -29,6 +30,9 @@ export class CustomerMenuComponent {
   protected cart = inject(CartService);
   private router = inject(Router);
   private orders = inject(CustomerOrderService);
+  protected reviews = inject(ReviewService);
+
+  constructor() { this.reviews.watchStats(); }
 
   private toast = viewChild<ToastComponent>('toast');
 

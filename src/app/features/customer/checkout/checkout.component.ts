@@ -4,8 +4,9 @@ import { CartService, FulfillmentMode } from '../../../core/services/cart.servic
 import { SettingsService } from '../../../core/services/settings.service';
 import { CustomerOrderService } from '../../../core/services/customer-order.service';
 import { deliveryFeeFor, etaMinutesFor } from '../../../core/models/settings.model';
-import { DeliveryAddress, Order } from '../../../core/models/order.model';
+import { DeliveryAddress, GeoPoint, Order } from '../../../core/models/order.model';
 import { ToastComponent } from '../../../shared/components/toast/toast.component';
+import { LocationPickerComponent } from '../../../shared/components/location-picker/location-picker.component';
 
 type PayMethod = 'cash' | 'card_on_delivery';
 
@@ -19,7 +20,7 @@ const PLACE_TIMEOUT_MS = 15000;
 @Component({
   selector: 'app-checkout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ToastComponent],
+  imports: [RouterLink, ToastComponent, LocationPickerComponent],
   templateUrl: './checkout.component.html',
   styleUrl: './checkout.component.scss',
 })
@@ -40,6 +41,7 @@ export class CheckoutComponent {
   readonly floor = signal(this.p.address.floor ?? '');
   readonly apartment = signal(this.p.address.apartment ?? '');
   readonly addrNotes = signal(this.p.address.notes ?? '');
+  readonly location = signal<GeoPoint | undefined>(this.p.address.location);
   readonly note = signal('');
   readonly pay = signal<PayMethod>('cash');
   readonly submitting = signal(false);
@@ -63,7 +65,8 @@ export class CheckoutComponent {
     if (!/^0\d{8,9}$/.test(this.phone().replace(/\D/g, ''))) e['phone'] = 'מספר טלפון לא תקין';
     if (this.isDelivery()) {
       if (!this.city().trim()) e['city'] = 'נא לבחור עיר';
-      if (!this.street().trim()) e['street'] = 'נא למלא רחוב ומספר בית';
+      // Many homes have no house number: a pin on the map is enough on its own.
+      if (!this.street().trim() && !this.location()) e['street'] = 'נא למלא רחוב/שכונה או לשתף מיקום';
     }
     return e;
   });
@@ -91,7 +94,7 @@ export class CheckoutComponent {
 
     const address: DeliveryAddress | undefined = this.isDelivery()
       ? { city: this.city().trim(), street: this.street().trim(), floor: this.floor().trim(),
-          apartment: this.apartment().trim(), notes: this.addrNotes().trim() }
+          apartment: this.apartment().trim(), notes: this.addrNotes().trim(), location: this.location() }
       : undefined;
 
     const order: Omit<Order, 'id' | 'num'> = {

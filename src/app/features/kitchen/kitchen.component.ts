@@ -3,7 +3,7 @@ import {
   OnInit, OnDestroy, viewChild,
 } from '@angular/core';
 import { OrderService } from '../../core/services/order.service';
-import { Order, OrderStatus, formatAddress } from '../../core/models/order.model';
+import { Order, OrderStatus, formatAddress, wazeUrl, googleMapsUrl } from '../../core/models/order.model';
 import { BrandMarkComponent } from '../../shared/components/brand-mark/brand-mark.component';
 import { ToastComponent } from '../../shared/components/toast/toast.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -132,10 +132,8 @@ export class KitchenComponent implements OnInit, OnDestroy {
     return order.type === 'here' ? '🪑 לשבת פה' : order.type === 'delivery' ? '🛵 משלוח' : '🥡 לקחת';
   }
 
-  wazeLink(order: Order): string {
-    const a = order.address;
-    return a ? `https://waze.com/ul?q=${encodeURIComponent(`${a.street}, ${a.city}`)}&navigate=yes` : '';
-  }
+  readonly wazeUrl = wazeUrl;
+  readonly googleMapsUrl = googleMapsUrl;
 
   telLink(phone: string): string {
     const d = phone.replace(/\D/g, '');

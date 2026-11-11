@@ -77,3 +77,25 @@
 
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; .btn { justify-content: center; padding: 13px; text-decoration: none; } }
 .again { display: flex; justify-content: center; margin-top: 10px; padding: 14px; text-decoration: none; font-size: 1rem; }
+
+.okc { color: #7fdc9f !important; }
+.rate {
+  text-align: center; border-color: var(--border-strong);
+  h3 { font-size: 1.15rem; margin-bottom: 2px; }
+  .rate-sub { color: var(--muted); font-size: .82rem; }
+  .stars { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
+  .stars button {
+    background: none; border: none; cursor: pointer; font-size: 2.4rem; line-height: 1;
+    color: var(--card2); transition: transform .1s, color .1s;
+    &.on { color: var(--gold); text-shadow: 0 0 14px rgba(200,150,46,.5); }
+    &:active { transform: scale(1.2); }
+  }
+  .star-label { min-height: 1.3em; margin-top: 4px; font-weight: 700; color: var(--gold2); }
+  textarea {
+    width: 100%; margin-top: 12px; background: var(--dark); border: 1px solid var(--border); color: var(--text);
+    border-radius: 12px; padding: 11px 13px; font: 16px 'Heebo', sans-serif; resize: vertical;
+    &:focus { outline: none; border-color: var(--gold); }
+  }
+  .send { width: 100%; justify-content: center; margin-top: 10px; padding: 13px; font-size: 1rem; }
+  &.thanks h3 { color: #7fdc9f; }
+}

@@ -5,12 +5,22 @@ export type OrderType = 'here' | 'takeaway' | 'delivery';
 
 export type OrderSource = 'kiosk' | 'app';
 
+export interface GeoPoint {
+  lat: number;
+  lng: number;
+  /** GPS accuracy in metres when the point came from the device; absent when the customer placed the pin by hand. */
+  accuracy?: number;
+}
+
 export interface DeliveryAddress {
   city: string;
   street: string;
   floor?: string;
   apartment?: string;
+  /** Free-text directions: what the house looks like, which entrance, landmarks. */
   notes?: string;
+  /** Exact spot of the house, picked on the map by the customer. */
+  location?: GeoPoint;
 }
 
 export interface OrderItem {
@@ -55,4 +65,15 @@ export function formatAddress(a: DeliveryAddress | undefined): string {
   const parts = [a.street, a.city].filter(Boolean).join(', ');
   const extra = [a.floor ? `קומה ${a.floor}` : '', a.apartment ? `דירה ${a.apartment}` : ''].filter(Boolean).join(', ');
   return extra ? `${parts} (${extra})` : parts;
+}
+
+export function wazeUrl(a: DeliveryAddress): string {
+  return a.location
+    ? `https://waze.com/ul?ll=${a.location.lat},${a.location.lng}&navigate=yes`
+    : `https://waze.com/ul?q=${encodeURIComponent(`${a.street}, ${a.city}`)}&navigate=yes`;
+}
+
+export function googleMapsUrl(a: DeliveryAddress): string {
+  const q = a.location ? `${a.location.lat},${a.location.lng}` : `${a.street}, ${a.city}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 }

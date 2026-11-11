@@ -83,10 +83,21 @@
           }
           @if (showErrors() && errors()['city']) { <span class="msg">{{ errors()['city'] }}</span> }
         </div>
+        <div class="loc-block">
+          <div class="loc-title">📍 איפה הבית שלך בדיוק?</div>
+          <p class="loc-sub">שתפו מיקום וסמנו את הבית על המפה – השליח יגיע ישר אליכם, גם בלי מספר בית.</p>
+          <app-location-picker [value]="location()" (changed)="location.set($event)"/>
+        </div>
         <div class="field" [class.err]="showErrors() && errors()['street']">
-          <label for="f-street">רחוב ומספר בית</label>
-          <input id="f-street" type="text" autocomplete="street-address" [value]="street()" (input)="street.set(val($event))"/>
+          <label for="f-street">רחוב / שכונה {{ location() ? '(לא חובה)' : '' }}</label>
+          <input id="f-street" type="text" autocomplete="street-address" placeholder="למשל: רחוב הזית 12, או שכונה מזרחית"
+                 [value]="street()" (input)="street.set(val($event))"/>
           @if (showErrors() && errors()['street']) { <span class="msg">{{ errors()['street'] }}</span> }
+        </div>
+        <div class="field">
+          <label for="f-anotes">איך מגיעים אליכם? תיאור הבית</label>
+          <textarea id="f-anotes" rows="3" placeholder="בית לבן עם שער חום, ליד המכולת. הכניסה מהסמטה מאחור, קומה שנייה מימין..."
+                    [value]="addrNotes()" (input)="addrNotes.set(val($event))"></textarea>
         </div>
         <div class="grid2">
           <div class="field">
@@ -97,10 +108,6 @@
             <label for="f-apt">דירה</label>
             <input id="f-apt" type="text" inputmode="numeric" [value]="apartment()" (input)="apartment.set(val($event))"/>
           </div>
-        </div>
-        <div class="field">
-          <label for="f-anotes">הערות לשליח</label>
-          <input id="f-anotes" type="text" placeholder="קוד לבניין, כניסה מאחור..." [value]="addrNotes()" (input)="addrNotes.set(val($event))"/>
         </div>
       }
 

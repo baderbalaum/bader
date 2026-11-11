@@ -40,9 +40,40 @@
       </ol>
     </section>
 
+    @if (o.status === 'done') {
+      @switch (reviewState()) {
+        @case ('open') {
+          <section class="card rate">
+            <h3>איך היה? ⭐</h3>
+            <p class="rate-sub">הדירוג שלכם עוזר לנו להשתפר ולאחרים לבחור</p>
+            <div class="stars" (mouseleave)="hoverStars.set(0)">
+              @for (n of [1, 2, 3, 4, 5]; track n) {
+                <button type="button" [class.on]="n <= (hoverStars() || stars())" [attr.aria-label]="n + ' כוכבים'"
+                        (mouseenter)="hoverStars.set(n)" (click)="stars.set(n)">★</button>
+              }
+            </div>
+            <div class="star-label">{{ starLabels[hoverStars() || stars()] }}</div>
+            @if (stars()) {
+              <textarea rows="3" placeholder="ספרו לנו מה אהבתם או מה אפשר לשפר (לא חובה)"
+                        [value]="comment()" (input)="comment.set(val($event))"></textarea>
+              <button class="btn gold send" (click)="sendReview()">שליחת דירוג</button>
+            }
+          </section>
+        }
+        @case ('sending') {
+          <section class="card rate"><p class="rate-sub">שולחים...</p></section>
+        }
+        @case ('sent') {
+          <section class="card rate thanks"><h3>תודה רבה! 🙏</h3><p class="rate-sub">קיבלנו את הדירוג שלכם</p></section>
+        }
+      }
+    }
+
     <section class="card">
       @if (o.type === 'delivery' && o.address) {
-        <div class="kv"><span>📍 כתובת</span><b>{{ formatAddress(o.address) }}</b></div>
+        <div class="kv"><span>📍 כתובת</span><b>{{ formatAddress(o.address) || 'לפי מיקום במפה' }}</b></div>
+        @if (o.address.location) { <div class="kv"><span>🎯 מיקום</span><b class="okc">נשלח לשליח ✓</b></div> }
+        @if (o.address.notes) { <div class="kv"><span>🏠 הגעה</span><b>{{ o.address.notes }}</b></div> }
       } @else {
         <div class="kv"><span>🛍️ איסוף עצמי</span><b>{{ settingsSvc.settings().address || 'מהמסעדה' }}</b></div>
       }

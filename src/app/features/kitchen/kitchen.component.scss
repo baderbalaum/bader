@@ -131,10 +131,14 @@
   margin-top: 6px; display: flex; align-items: flex-start; gap: 6px;
   font-size: .82rem; color: var(--cream); font-weight: 700;
   .addr-text { flex: 1; small { display: block; color: var(--muted); font-weight: 500; margin-top: 2px; } }
-  .waze {
-    flex-shrink: 0; background: #33ccff; color: #062b3a; text-decoration: none;
+  .pin-ok { display: inline-block; margin-top: 3px; color: #7fdc9f; font-size: .72rem; }
+  .nav-links { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+  .waze, .gmaps {
+    text-align: center; text-decoration: none;
     font-size: .72rem; font-weight: 900; padding: 4px 10px; border-radius: 999px;
   }
+  .waze { background: #33ccff; color: #062b3a; }
+  .gmaps { background: var(--cream); color: var(--dark); }
 }
 
 .cust-row {

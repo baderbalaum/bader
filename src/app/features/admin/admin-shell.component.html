@@ -28,6 +28,7 @@
       <app-brand-mark [size]="40" subtitle="ADMIN — ניהול תפריט"/>
       <div class="topbar-actions">
         <button class="btn gold" (click)="settingsOpen.set(true)">⚙ הגדרות משלוח</button>
+        <button class="btn" (click)="reviewsOpen.set(true)">⭐ דירוגים</button>
         <button class="btn" (click)="exportJSON()">⬇ ייצוא JSON</button>
         <button class="btn" (click)="importFileInput.click()">⬆ ייבוא</button>
         <input #importFileInput type="file" accept="application/json" style="display:none" (change)="importJSON($event)"/>
@@ -272,4 +273,8 @@
 
 @if (settingsOpen()) {
   <app-store-settings (closed)="settingsOpen.set(false)" (savedOk)="onSettingsSaved()"/>
+}
+
+@if (reviewsOpen()) {
+  <app-reviews-dialog (closed)="reviewsOpen.set(false)"/>
 }

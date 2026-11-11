@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, inject, input, signal, computed, ef
 import { RouterLink } from '@angular/router';
 import { CustomerOrderService } from '../../../core/services/customer-order.service';
 import { SettingsService } from '../../../core/services/settings.service';
+import { ReviewService } from '../../../core/services/review.service';
 import { Order, formatAddress } from '../../../core/models/order.model';
 
 interface Step { label: string; icon: string; }
@@ -29,6 +30,7 @@ const PICKUP_STEPS: Step[] = [
 export class TrackComponent {
   private orders = inject(CustomerOrderService);
   protected settingsSvc = inject(SettingsService);
+  private reviews = inject(ReviewService);
 
   readonly id = input.required<string>();
   /** undefined = still loading, null = cancelled / not found. */
@@ -42,7 +44,41 @@ export class TrackComponent {
       const off = this.orders.watchOrder(id, o => this.order.set(o));
       onCleanup(off);
     });
+
+    // Once delivered, offer a rating unless this order was already rated.
+    effect(() => {
+      const o = this.order();
+      if (o?.status !== 'done' || this.reviewState() !== 'unknown') return;
+      this.reviewState.set('checking');
+      this.reviews.hasReview(o.id)
+        .then(has => this.reviewState.set(has ? 'already' : 'open'))
+        .catch(() => this.reviewState.set('open'));
+    });
   }
+
+  // ── Rating ──
+  readonly reviewState = signal<'unknown' | 'checking' | 'open' | 'sending' | 'sent' | 'already'>('unknown');
+  readonly stars = signal(0);
+  readonly hoverStars = signal(0);
+  readonly comment = signal('');
+  readonly starLabels = ['', 'גרוע', 'לא משהו', 'בסדר', 'טעים מאוד', 'מושלם! 🤩'];
+
+  async sendReview(): Promise<void> {
+    const o = this.order();
+    if (!o || !this.stars() || this.reviewState() === 'sending') return;
+    this.reviewState.set('sending');
+    try {
+      await this.reviews.submit({
+        orderId: o.id, num: o.num, stars: this.stars(), comment: this.comment().trim(),
+        name: o.customerName?.split(' ')[0], createdAt: Date.now(),
+      });
+      this.reviewState.set('sent');
+    } catch {
+      this.reviewState.set('open');
+    }
+  }
+
+  val(e: Event): string { return (e.target as HTMLTextAreaElement).value; }
 
   readonly isDelivery = computed(() => this.order()?.type === 'delivery');
   readonly steps = computed(() => (this.isDelivery() ? DELIVERY_STEPS : PICKUP_STEPS));

@@ -73,10 +73,14 @@
           <div class="addr-row">
             <span>📍</span>
             <div class="addr-text">
-              <div>{{ formatAddress(order.address) }}</div>
-              @if (order.address.notes) { <small>{{ order.address.notes }}</small> }
+              <div>{{ formatAddress(order.address) || 'לפי מיקום במפה' }}</div>
+              @if (order.address.location) { <span class="pin-ok">✓ מיקום מדויק במפה</span> }
+              @if (order.address.notes) { <small>🏠 {{ order.address.notes }}</small> }
             </div>
-            <a class="waze" [href]="wazeLink(order)" target="_blank" rel="noopener">Waze</a>
+            <div class="nav-links">
+              <a class="waze" [href]="wazeUrl(order.address)" target="_blank" rel="noopener">Waze</a>
+              <a class="gmaps" [href]="googleMapsUrl(order.address)" target="_blank" rel="noopener">מפות</a>
+            </div>
           </div>
         }
       </div>

@@ -7,6 +7,9 @@
       <img class="logo" src="Toroz.jpg" alt="טורוז מיט"/>
       <h1>טורוז מיט</h1>
       <p class="tagline">בשר אמיתי · טורטיות · בורגרים</p>
+      @if (reviews.stats().count > 0) {
+        <div class="rating"><span class="star">★</span> <b>{{ reviews.average() }}</b> <span>({{ reviews.stats().count }} דירוגים)</span></div>
+      }
       <span class="status" [class.closed]="!s().isOpen">
         <span class="dot"></span>{{ s().isOpen ? 'פתוח עכשיו להזמנות' : 'סגור כרגע' }}
       </span>

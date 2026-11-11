@@ -10,11 +10,12 @@ import { BrandMarkComponent } from '../../shared/components/brand-mark/brand-mar
 import { ToastComponent } from '../../shared/components/toast/toast.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { StoreSettingsComponent } from './store-settings/store-settings.component';
+import { ReviewsDialogComponent } from './reviews-dialog/reviews-dialog.component';
 
 @Component({
   selector: 'app-admin-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [KeyValuePipe, BrandMarkComponent, ToastComponent, ConfirmDialogComponent, StoreSettingsComponent],
+  imports: [KeyValuePipe, BrandMarkComponent, ToastComponent, ConfirmDialogComponent, StoreSettingsComponent, ReviewsDialogComponent],
   templateUrl: './admin-shell.component.html',
   styleUrl: './admin-shell.component.scss',
 })
@@ -45,6 +46,7 @@ export class AdminShellComponent {
 
   // ── Store / delivery settings ──
   readonly settingsOpen = signal(false);
+  readonly reviewsOpen = signal(false);
 
   onSettingsSaved(): void {
     this.settingsOpen.set(false);
