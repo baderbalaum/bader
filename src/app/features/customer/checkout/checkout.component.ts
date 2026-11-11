@@ -3,7 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { CartService, FulfillmentMode } from '../../../core/services/cart.service';
 import { SettingsService } from '../../../core/services/settings.service';
 import { CustomerOrderService } from '../../../core/services/customer-order.service';
-import { deliveryFeeFor, etaMinutesFor } from '../../../core/models/settings.model';
+import { deliveryFeeFor, etaMinutesFor, distanceKm } from '../../../core/models/settings.model';
 import { DeliveryAddress, GeoPoint, Order } from '../../../core/models/order.model';
 import { ToastComponent } from '../../../shared/components/toast/toast.component';
 import { LocationPickerComponent } from '../../../shared/components/location-picker/location-picker.component';
@@ -59,12 +59,22 @@ export class CheckoutComponent {
   readonly missingForMin = computed(() =>
     this.isDelivery() ? Math.max(0, this.s().minOrder - this.cart.subtotal()) : 0);
 
+  /** With a single delivery city there is nothing to choose: it is filled in automatically. */
+  readonly singleCity = computed(() => (this.s().cities.length === 1 ? this.s().cities[0] : ''));
+  readonly effectiveCity = computed(() => this.singleCity() || this.city().trim());
+
+  readonly outOfArea = computed(() => {
+    const loc = this.location(), s = this.s();
+    if (!this.isDelivery() || !loc || !s.deliveryRadiusKm) return false;
+    return distanceKm(loc, s.deliveryCenter) > s.deliveryRadiusKm;
+  });
+
   readonly errors = computed(() => {
     const e: Record<string, string> = {};
     if (!this.name().trim()) e['name'] = 'נא למלא שם';
     if (!/^0\d{8,9}$/.test(this.phone().replace(/\D/g, ''))) e['phone'] = 'מספר טלפון לא תקין';
     if (this.isDelivery()) {
-      if (!this.city().trim()) e['city'] = 'נא לבחור עיר';
+      if (!this.effectiveCity()) e['city'] = 'נא לבחור עיר';
       // Many homes have no house number: a pin on the map is enough on its own.
       if (!this.street().trim() && !this.location()) e['street'] = 'נא למלא רחוב/שכונה או לשתף מיקום';
     }
@@ -76,6 +86,7 @@ export class CheckoutComponent {
     if (!this.s().isOpen) return 'המסעדה סגורה כרגע';
     if (this.isDelivery() && !this.s().deliveryEnabled) return 'משלוחים לא זמינים כרגע';
     if (!this.isDelivery() && !this.s().pickupEnabled) return 'איסוף עצמי לא זמין כרגע';
+    if (this.outOfArea()) return `המיקום שסימנתם מחוץ לאזור המשלוחים (${this.s().cities.join(', ') || 'האזור שלנו'})`;
     if (this.missingForMin() > 0) return `חסרים ₪${this.missingForMin()} למינימום הזמנה במשלוח`;
     return '';
   });
@@ -93,7 +104,7 @@ export class CheckoutComponent {
     }
 
     const address: DeliveryAddress | undefined = this.isDelivery()
-      ? { city: this.city().trim(), street: this.street().trim(), floor: this.floor().trim(),
+      ? { city: this.effectiveCity(), street: this.street().trim(), floor: this.floor().trim(),
           apartment: this.apartment().trim(), notes: this.addrNotes().trim(), location: this.location() }
       : undefined;
 

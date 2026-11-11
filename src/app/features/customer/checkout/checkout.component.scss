@@ -99,3 +99,10 @@
   .loc-title { font-weight: 900; color: var(--cream); }
   .loc-sub { color: var(--muted); font-size: .8rem; margin: 4px 0 10px; line-height: 1.4; }
 }
+
+.area-note {
+  background: rgba(200,150,46,.1); border: 1px solid var(--border); border-radius: 12px;
+  padding: 10px 12px; margin-bottom: 14px; font-size: .9rem; color: var(--cream);
+  b { color: var(--gold2); }
+}
+.area-warn { margin-top: 8px; color: var(--amber); font-size: .82rem; font-weight: 700; line-height: 1.4; }

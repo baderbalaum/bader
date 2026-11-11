@@ -12,7 +12,8 @@ export class SettingsService {
   constructor() {
     onValue(ref(this.db, 'settings'), snap => {
       const raw = snap.exists() ? (snap.val() as Partial<StoreSettings>) : {};
-      this.settings.set({ ...DEFAULT_SETTINGS, ...raw, cities: raw.cities ?? [] });
+      // Firebase drops empty arrays, so a missing list means "use the default area".
+      this.settings.set({ ...DEFAULT_SETTINGS, ...raw, cities: raw.cities ?? DEFAULT_SETTINGS.cities });
       this.loaded.set(true);
     });
   }

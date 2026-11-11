@@ -3,6 +3,7 @@ import {
   OnInit, OnDestroy, viewChild,
 } from '@angular/core';
 import { OrderService } from '../../core/services/order.service';
+import { SettingsService } from '../../core/services/settings.service';
 import { Order, OrderStatus, formatAddress, wazeUrl, googleMapsUrl } from '../../core/models/order.model';
 import { BrandMarkComponent } from '../../shared/components/brand-mark/brand-mark.component';
 import { ToastComponent } from '../../shared/components/toast/toast.component';
@@ -19,6 +20,7 @@ type FilterType = 'active' | 'new' | 'preparing' | 'ready' | 'done';
 })
 export class KitchenComponent implements OnInit, OnDestroy {
   private orderSvc = inject(OrderService);
+  private settingsSvc = inject(SettingsService);
 
   private toast = viewChild.required<ToastComponent>('toast');
   private confirm = viewChild.required<ConfirmDialogComponent>('confirm');
@@ -138,6 +140,25 @@ export class KitchenComponent implements OnInit, OnDestroy {
   telLink(phone: string): string {
     const d = phone.replace(/\D/g, '');
     return 'tel:' + (d.startsWith('0') ? '+972' + d.slice(1) : d);
+  }
+
+  /** Opens WhatsApp with everything the courier needs: who, where (with a navigation link), what to collect. */
+  sendToCourier(order: Order): void {
+    const a = order.address;
+    const lines = [
+      `🛵 *משלוח #${order.num}*`,
+      `👤 ${order.customerName ?? ''}${order.customerPhone ? ' · ' + order.customerPhone : ''}`,
+      a ? `📍 ${formatAddress(a) || 'לפי המיקום במפה'}` : '',
+      a?.notes ? `🏠 ${a.notes}` : '',
+      a ? `🗺️ ניווט: ${wazeUrl(a)}` : '',
+      a?.location ? `📌 מפה: ${googleMapsUrl(a)}` : '',
+      `💰 לגבות: ₪${order.total} (${order.payment})`,
+      order.note ? `📝 ${order.note}` : '',
+      '───────────',
+      ...(order.items ?? []).map(i => `${i.qty}× ${i.name}`),
+    ].filter(Boolean);
+    const phone = this.settingsSvc.settings().courierPhone.replace(/\D/g, '');
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
   }
 
   itemCount(order: Order): number {

@@ -71,22 +71,29 @@
       </div>
 
       @if (isDelivery()) {
-        <div class="field" [class.err]="showErrors() && errors()['city']">
-          <label for="f-city">עיר</label>
-          @if (s().cities.length) {
-            <select id="f-city" [value]="city()" (change)="city.set(val($event))">
-              <option value="">בחרו עיר</option>
-              @for (c of s().cities; track c) { <option [value]="c" [selected]="c === city()">{{ c }}</option> }
-            </select>
-          } @else {
-            <input id="f-city" type="text" autocomplete="address-level2" [value]="city()" (input)="city.set(val($event))"/>
-          }
-          @if (showErrors() && errors()['city']) { <span class="msg">{{ errors()['city'] }}</span> }
-        </div>
+        @if (singleCity()) {
+          <div class="area-note">🛵 משלוחים ב<b>{{ singleCity() }}</b> בלבד</div>
+        } @else {
+          <div class="field" [class.err]="showErrors() && errors()['city']">
+            <label for="f-city">עיר</label>
+            @if (s().cities.length) {
+              <select id="f-city" [value]="city()" (change)="city.set(val($event))">
+                <option value="">בחרו עיר</option>
+                @for (c of s().cities; track c) { <option [value]="c" [selected]="c === city()">{{ c }}</option> }
+              </select>
+            } @else {
+              <input id="f-city" type="text" autocomplete="address-level2" [value]="city()" (input)="city.set(val($event))"/>
+            }
+            @if (showErrors() && errors()['city']) { <span class="msg">{{ errors()['city'] }}</span> }
+          </div>
+        }
         <div class="loc-block">
           <div class="loc-title">📍 איפה הבית שלך בדיוק?</div>
           <p class="loc-sub">שתפו מיקום וסמנו את הבית על המפה – השליח יגיע ישר אליכם, גם בלי מספר בית.</p>
-          <app-location-picker [value]="location()" (changed)="location.set($event)"/>
+          <app-location-picker [value]="location()" [center]="s().deliveryCenter" (changed)="location.set($event)"/>
+          @if (outOfArea()) {
+            <p class="area-warn">⚠️ הסיכה נמצאת מחוץ ל{{ singleCity() || 'אזור המשלוחים' }}. גררו אותה לבית שלכם, או בחרו איסוף עצמי.</p>
+          }
         </div>
         <div class="field" [class.err]="showErrors() && errors()['street']">
           <label for="f-street">רחוב / שכונה {{ location() ? '(לא חובה)' : '' }}</label>

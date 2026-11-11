@@ -206,3 +206,9 @@
   .filter-tabs { width: 100%; justify-content: space-between; }
   .tab { padding: 6px 10px; font-size: .76rem; }
 }
+
+.courier-btn {
+  width: 100%; margin-top: 8px; padding: 8px; border-radius: 10px; cursor: pointer;
+  background: #25D366; color: #062b14; border: none; font: 900 .82rem 'Heebo', sans-serif;
+  &:hover { filter: brightness(1.08); }
+}

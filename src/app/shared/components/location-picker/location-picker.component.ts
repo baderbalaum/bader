@@ -5,8 +5,6 @@ import {
 import type * as Leaflet from 'leaflet';
 import { GeoPoint } from '../../../core/models/order.model';
 
-/** Fallback centre (Israel) when the customer hasn't shared a location yet. */
-const DEFAULT_CENTER: [number, number] = [32.7, 35.3];
 
 /**
  * Map with a draggable pin so the customer can mark exactly where their house is.
@@ -60,6 +58,8 @@ const DEFAULT_CENTER: [number, number] = [32.7, 35.3];
 })
 export class LocationPickerComponent implements OnDestroy {
   readonly value = input<GeoPoint | undefined>(undefined);
+  /** Where the map opens when the device location is unavailable (the delivery area). */
+  readonly center = input<{ lat: number; lng: number }>({ lat: 32.2667, lng: 35.0103 });
   readonly changed = output<GeoPoint | undefined>();
 
   readonly locating = signal(false);
@@ -78,7 +78,7 @@ export class LocationPickerComponent implements OnDestroy {
     this.error.set('');
     if (!('geolocation' in navigator)) {
       this.error.set('הדפדפן לא תומך בשיתוף מיקום. אפשר לסמן ידנית על המפה.');
-      void this.showOnMap({ lat: DEFAULT_CENTER[0], lng: DEFAULT_CENTER[1] }, 9);
+      void this.showOnMap(this.center(), 15);
       return;
     }
     this.locating.set(true);
@@ -97,9 +97,9 @@ export class LocationPickerComponent implements OnDestroy {
         this.error.set(err.code === err.PERMISSION_DENIED
           ? 'לא אישרתם גישה למיקום. אפשר לאשר בהגדרות הדפדפן או לגרור את הסיכה ידנית.'
           : 'לא הצלחנו לאתר את המיקום. נסו שוב או גררו את הסיכה ידנית.');
-        const fallback = this.value() ?? { lat: DEFAULT_CENTER[0], lng: DEFAULT_CENTER[1] };
-        if (!this.value()) this.changed.emit(fallback);
-        void this.showOnMap(fallback, this.value() ? 18 : 9);
+        const fallback = this.value() ?? this.center();
+        if (!this.value()) this.changed.emit({ lat: fallback.lat, lng: fallback.lng });
+        void this.showOnMap(fallback, this.value() ? 18 : 15);
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 },
     );

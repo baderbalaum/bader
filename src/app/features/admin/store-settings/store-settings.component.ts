@@ -2,9 +2,9 @@ import { Component, ChangeDetectionStrategy, inject, output, signal } from '@ang
 import { SettingsService } from '../../../core/services/settings.service';
 import { StoreSettings } from '../../../core/models/settings.model';
 
-type NumKey = 'deliveryFee' | 'freeDeliveryOver' | 'minOrder' | 'prepMinutes' | 'deliveryMinutes';
+type NumKey = 'deliveryFee' | 'freeDeliveryOver' | 'minOrder' | 'prepMinutes' | 'deliveryMinutes' | 'deliveryRadiusKm';
 type BoolKey = 'isOpen' | 'deliveryEnabled' | 'pickupEnabled';
-type TextKey = 'phone' | 'address' | 'announcement';
+type TextKey = 'phone' | 'address' | 'announcement' | 'courierPhone';
 
 @Component({
   selector: 'app-store-settings',
@@ -50,6 +50,10 @@ type TextKey = 'phone' | 'address' | 'announcement';
               <label>כתובת המסעדה (לאיסוף עצמי)</label>
               <input type="text" [value]="f().address" (input)="setText('address', $event)"/>
             </div>
+          </div>
+          <div class="field">
+            <label>וואטסאפ של השליח (972..., ריק = בחירת איש קשר בכל שליחה)</label>
+            <input type="text" dir="ltr" [value]="f().courierPhone" (input)="setText('courierPhone', $event)"/>
           </div>
           <div class="field">
             <label>הודעה ללקוחות בראש האפליקציה (מבצע, שעות מיוחדות...)</label>
@@ -104,6 +108,7 @@ export class StoreSettingsComponent {
     { key: 'freeDeliveryOver', label: 'משלוח חינם מעל (₪)' },
     { key: 'prepMinutes', label: 'זמן הכנה (דק׳)' },
     { key: 'deliveryMinutes', label: 'זמן נסיעה (דק׳)' },
+    { key: 'deliveryRadiusKm', label: 'רדיוס משלוח (ק״מ, 0 = ללא)' },
   ];
 
   val(e: Event): string { return (e.target as HTMLInputElement).value; }
@@ -115,7 +120,11 @@ export class StoreSettingsComponent {
     this.saving.set(true);
     try {
       const cities = this.citiesText().split(',').map(c => c.trim()).filter(Boolean);
-      await this.svc.save({ ...this.f(), phone: this.f().phone.replace(/\D/g, ''), cities });
+      await this.svc.save({
+        ...this.f(), cities,
+        phone: this.f().phone.replace(/\D/g, ''),
+        courierPhone: this.f().courierPhone.replace(/\D/g, ''),
+      });
       this.savedOk.emit();
     } finally {
       this.saving.set(false);

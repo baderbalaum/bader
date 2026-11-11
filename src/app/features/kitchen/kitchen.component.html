@@ -82,6 +82,9 @@
               <a class="gmaps" [href]="googleMapsUrl(order.address)" target="_blank" rel="noopener">מפות</a>
             </div>
           </div>
+          @if (order.status !== 'done') {
+            <button class="courier-btn" (click)="sendToCourier(order)">📲 שלח לשליח בוואטסאפ</button>
+          }
         }
       </div>
 
