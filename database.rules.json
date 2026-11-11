@@ -1,0 +1,59 @@
+{
+  "rules": {
+    "menu": {
+      ".read": true,
+      ".write": "auth != null && root.child('staff/' + auth.uid).val() === true"
+    },
+    "menuMeta": {
+      ".read": true,
+      ".write": "auth != null && root.child('staff/' + auth.uid).val() === true"
+    },
+    "settings": {
+      ".read": true,
+      ".write": "auth != null && root.child('staff/' + auth.uid).val() === true"
+    },
+    "staff": {
+      ".read": "auth != null && root.child('staff/' + auth.uid).val() === true",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.provider === 'password' && ((!root.child('staff').exists() && auth.uid === $uid && newData.val() === true) || root.child('staff/' + auth.uid).val() === true)"
+      }
+    },
+    "meta": {
+      "lastOrderNum": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".validate": "newData.isNumber() && ((!data.exists() && newData.val() > 0) || newData.val() === data.val() + 1)"
+      }
+    },
+    "todayOrders": {
+      ".read": "auth != null && root.child('staff/' + auth.uid).val() === true",
+      ".write": "auth != null && root.child('staff/' + auth.uid).val() === true",
+      "$id": {
+        ".read": "auth != null && data.child('customerUid').val() === auth.uid",
+        ".write": "auth != null && !data.exists() && newData.child('customerUid').val() === auth.uid && newData.child('status').val() === 'new'",
+        ".validate": "newData.hasChildren(['num', 'status', 'type', 'total', 'createdAt'])"
+      }
+    },
+    "doneOrders": {
+      ".read": "auth != null && root.child('staff/' + auth.uid).val() === true",
+      ".write": "auth != null && root.child('staff/' + auth.uid).val() === true",
+      "$id": {
+        ".read": "auth != null && data.child('customerUid').val() === auth.uid"
+      }
+    },
+    "reviews": {
+      ".read": "auth != null && root.child('staff/' + auth.uid).val() === true",
+      "$orderId": {
+        ".read": "auth != null && root.child('doneOrders/' + $orderId + '/customerUid').val() === auth.uid",
+        ".write": "!data.exists() && auth != null && root.child('doneOrders/' + $orderId + '/customerUid').val() === auth.uid",
+        ".validate": "newData.child('orderId').val() === $orderId && newData.child('stars').isNumber() && newData.child('stars').val() >= 1 && newData.child('stars').val() <= 5 && (!newData.child('comment').exists() || (newData.child('comment').isString() && newData.child('comment').val().length <= 1000))"
+      }
+    },
+    "reviewStats": {
+      ".read": true,
+      ".write": "auth != null",
+      ".validate": "(!data.exists() && newData.child('count').val() === 1 && newData.child('sum').val() >= 1 && newData.child('sum').val() <= 5) || (data.exists() && newData.child('count').val() === data.child('count').val() + 1 && newData.child('sum').val() >= data.child('sum').val() + 1 && newData.child('sum').val() <= data.child('sum').val() + 5)"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Menu photos: anyone can view; only staff (email/password accounts) can upload or delete.
+    // Turn OFF "Enable create (sign-up)" in Authentication > Settings so that only accounts
+    // you create in the Firebase console exist.
+    match /menu-images/{allPaths=**} {
+      allow read: if true;
+      allow delete: if request.auth != null && request.auth.token.firebase.sign_in_provider == 'password';
+      allow create, update: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'password'
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

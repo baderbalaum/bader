@@ -3,7 +3,8 @@ import {
 } from '@angular/core';
 import { MenuService } from '../../core/services/menu.service';
 import { StorageService } from '../../core/services/storage.service';
-import { PinService } from '../../core/services/pin.service';
+import { AuthService } from '../../core/services/auth.service';
+import { Router } from '@angular/router';
 import { MenuItem, MenuCategory, MenuData, Size } from '../../core/models/menu.model';
 import { KeyValuePipe } from '@angular/common';
 import { BrandMarkComponent } from '../../shared/components/brand-mark/brand-mark.component';
@@ -22,27 +23,16 @@ import { ReviewsDialogComponent } from './reviews-dialog/reviews-dialog.componen
 export class AdminShellComponent {
   readonly menuSvc = inject(MenuService);
   private storageSvc = inject(StorageService);
-  readonly pinSvc = inject(PinService);
+  private authSvc = inject(AuthService);
+  private router = inject(Router);
 
   private toast = viewChild.required<ToastComponent>('toast');
   private confirm = viewChild.required<ConfirmDialogComponent>('confirm');
 
-  // ── PIN ──
-  readonly pinInput = signal('');
-  readonly pinError = signal('');
-
-  tryUnlock(): void {
-    if (this.pinSvc.tryUnlock(this.pinInput())) {
-      this.pinInput.set('');
-      this.pinError.set('');
-    } else {
-      this.pinError.set('קוד שגוי, נסה שוב');
-      this.pinInput.set('');
-      setTimeout(() => this.pinError.set(''), 2200);
-    }
+  async logout(): Promise<void> {
+    await this.authSvc.logout();
+    this.router.navigate(['/login'], { queryParams: { next: '/admin' } });
   }
-
-  lock(): void { this.pinSvc.lock(); }
 
   // ── Store / delivery settings ──
   readonly settingsOpen = signal(false);

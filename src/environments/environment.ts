@@ -1,5 +1,7 @@
 export const environment = {
   production: false,
+  /** Connect to local Firebase emulators (npm run dev:emulator). */
+  useEmulators: false,
   firebase: {
   apiKey: "AIzaSyCgmdMmrruA_EblnE-SxTnZhd1JlnkIGNI",
   authDomain: "toroz-kiosk.firebaseapp.com",

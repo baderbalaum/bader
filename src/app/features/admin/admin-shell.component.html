@@ -1,26 +1,4 @@
-<!-- ══ PIN GATE ══ -->
-@if (!pinSvc.isAuthenticated()) {
-  <div class="gate">
-    <div class="gate-card">
-      <div class="lock">🔒</div>
-      <h1>ניהול תפריט</h1>
-      <p>הזן קוד גישה</p>
-      <input
-        type="password" inputmode="numeric" maxlength="6"
-        class="pin-input" placeholder="••••" autocomplete="off"
-        [value]="pinInput()"
-        (input)="pinInput.set($any($event.target).value)"
-        (keydown.enter)="tryUnlock()"
-      />
-      <button class="gate-btn" (click)="tryUnlock()">כניסה</button>
-      <div class="gate-err">{{ pinError() }}</div>
-      <div class="gate-hint">קוד ברירת מחדל: 1234</div>
-    </div>
-  </div>
-}
-
 <!-- ══ APP ══ -->
-@if (pinSvc.isAuthenticated()) {
   <div class="app">
 
     <!-- TOPBAR -->
@@ -33,7 +11,7 @@
         <button class="btn" (click)="importFileInput.click()">⬆ ייבוא</button>
         <input #importFileInput type="file" accept="application/json" style="display:none" (change)="importJSON($event)"/>
         <button class="btn danger" (click)="resetDefaults()">↺ איפוס</button>
-        <button class="btn ghost" (click)="lock()">🔒 נעל</button>
+        <button class="btn ghost" (click)="logout()">🔒 יציאה</button>
       </div>
     </div>
 
@@ -123,7 +101,6 @@
       </section>
     </div>
   </div>
-}
 
 <!-- ══ ITEM MODAL ══ -->
 @if (itemModalOpen()) {

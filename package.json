@@ -6,7 +6,10 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:rules": "firebase emulators:exec --only database --project toroz-kiosk \"node test/database.rules.test.mjs\"",
+    "emulators": "firebase emulators:start --only auth,database --project toroz-kiosk",
+    "dev:emulator": "ng serve -c emulator"
   },
   "private": true,
   "packageManager": "npm@11.1.0",
@@ -27,7 +30,9 @@
     "@angular/build": "^21.2.10",
     "@angular/cli": "^21.2.10",
     "@angular/compiler-cli": "^21.2.0",
+    "@firebase/rules-unit-testing": "^5.0.0",
     "@types/leaflet": "^1.9.12",
+    "firebase-tools": "^14.24.0",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2"
   }

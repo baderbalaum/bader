@@ -36,6 +36,8 @@ export interface Order {
   status: OrderStatus;
   type: OrderType;
   source?: OrderSource;
+  /** Auth uid of the customer who placed it (app orders); the rules let only them read it. */
+  customerUid?: string;
   payment: string;
   customerName?: string;
   customerPhone?: string;
