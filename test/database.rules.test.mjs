@@ -14,13 +14,15 @@ async function check(name, p) {
 }
 
 const anonDb = uid => env.authenticatedContext(uid, { firebase: { sign_in_provider: 'anonymous' }, provider_id: 'anonymous' }).database();
+const phoneOf = uid => '+97250' + String(1000000 + uid.length * 1111).slice(0, 7);
+const phoneDb = uid => env.authenticatedContext(uid, { firebase: { sign_in_provider: 'phone' }, phone_number: phoneOf(uid) }).database();
 const pwDb = uid => env.authenticatedContext(uid, { firebase: { sign_in_provider: 'password' }, email: uid + '@x.test' }).database();
 const guest = env.unauthenticatedContext().database();
 const order = (uid, extra = {}) => ({ num: 201, status: 'new', type: 'delivery', total: 80, createdAt: Date.now(), customerUid: uid,
   customerPhone: '0501234567', address: { city: 'טייבה', street: '', location: { lat: 32.26, lng: 35.01 } }, ...extra });
 
 await env.clearDatabase();
-const A = anonDb('custA'), B = anonDb('custB');
+const A = phoneDb('custA'), B = phoneDb('custBB'), Anon = anonDb('anon1');
 
 // ── public data ──
 await check('guest can read menu', assertSucceeds(get(ref(guest, 'menu'))));
@@ -34,9 +36,10 @@ await check('customer cannot read order list', assertFails(get(ref(A, 'todayOrde
 await check('customer places own order', assertSucceeds(set(ref(A, 'todayOrders/o1'), order('custA'))));
 await check('customer reads own order', assertSucceeds(get(ref(A, 'todayOrders/o1'))));
 await check('other customer cannot read it', assertFails(get(ref(B, 'todayOrders/o1'))));
+await check('unverified (no phone) visitor cannot place order', assertFails(set(ref(Anon, 'todayOrders/o6'), order('anon1'))));
 await check('guest cannot read it', assertFails(get(ref(guest, 'todayOrders/o1'))));
 await check('customer cannot edit order after placing', assertFails(update(ref(A, 'todayOrders/o1'), { status: 'done', total: 1 })));
-await check('customer cannot place order for someone else', assertFails(set(ref(A, 'todayOrders/o2'), order('custB'))));
+await check('customer cannot place order for someone else', assertFails(set(ref(A, 'todayOrders/o2'), order('custBB'))));
 await check('customer cannot place order already "done"', assertFails(set(ref(A, 'todayOrders/o3'), order('custA', { status: 'done' }))));
 await check('guest cannot place order', assertFails(set(ref(guest, 'todayOrders/o4'), order(''))));
 await check('order missing fields rejected', assertFails(set(ref(A, 'todayOrders/o5'), { status: 'new', customerUid: 'custA' })));
@@ -74,6 +77,21 @@ await check('stats: first rating', assertSucceeds(runTransaction(ref(A, 'reviewS
 await check('stats: cannot add 50 stars at once', assertFails(set(ref(A, 'reviewStats'), { count: 2, sum: 55 })));
 await check('stats: cannot reset', assertFails(set(ref(A, 'reviewStats'), { count: 1, sum: 5 })));
 await check('guest reads stats', assertSucceeds(get(ref(guest, 'reviewStats'))));
+
+// ── customer profiles + marketing consent ──
+const profile = (uid, extra = {}) => ({ phone: phoneOf(uid), name: 'אחמד', marketingConsent: true, consentAt: 1, createdAt: 1, ordersCount: 1, ...extra });
+await check('customer saves own profile with consent', assertSucceeds(set(ref(A, 'customers/custA'), profile('custA'))));
+await check('customer reads own profile', assertSucceeds(get(ref(A, 'customers/custA'))));
+await check('customer cannot read other profiles', assertFails(get(ref(B, 'customers/custA'))));
+await check('customer cannot list all customers', assertFails(get(ref(A, 'customers'))));
+await check('cannot save profile under someone else', assertFails(set(ref(B, 'customers/custA'), profile('custBB'))));
+await check('profile phone must be the verified one', assertFails(set(ref(B, 'customers/custBB'), profile('custBB', { phone: '+972509999999' }))));
+await check('unverified visitor cannot create profile', assertFails(set(ref(Anon, 'customers/anon1'), profile('anon1'))));
+await check('unknown fields rejected', assertFails(set(ref(B, 'customers/custBB'), profile('custBB', { isAdmin: true }))));
+await check('customer withdraws consent', assertSucceeds(update(ref(A, 'customers/custA'), { marketingConsent: false, consentAt: 2 })));
+await check('staff lists customers', assertSucceeds(get(ref(owner, 'customers'))));
+await check('staff turns consent off ("הסר")', assertSucceeds(update(ref(owner, 'customers/custA'), { marketingConsent: false, consentAt: 3 })));
+await check('staff cannot change customer phone', assertFails(update(ref(owner, 'customers/custA'), { phone: '+972501111111' })));
 
 await env.cleanup();
 for (const r of results) console.log(r.join('  '));

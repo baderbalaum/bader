@@ -21,7 +21,8 @@ export class CustomerOrderService {
 
   async placeOrder(order: Omit<Order, 'id' | 'num'>): Promise<{ id: string; num: number }> {
     if (environment.demo) return this.placeDemoOrder(order);
-    const user = await this.auth.ensureCustomer();
+    const user = await this.auth.customer();
+    if (!user) throw new Error('phone-not-verified');
     let num = 200;
     await runTransaction(ref(this.db, 'meta/lastOrderNum'), current => {
       num = (current ?? 200) + 1;
@@ -63,7 +64,8 @@ export class CustomerOrderService {
       }, () => leave());
     };
 
-    this.auth.ensureCustomer().then(() => listen('todayOrders', false)).catch(() => cb(null));
+    // Only the customer who placed the order (same verified phone) can read it.
+    this.auth.customer().then(u => (u ? listen('todayOrders', false) : cb(null))).catch(() => cb(null));
     return () => { stopped = true; off(); };
   }
 

@@ -57,18 +57,12 @@
     <!-- DETAILS -->
     <section class="card">
       <h2>פרטים</h2>
-      <div class="grid2">
-        <div class="field" [class.err]="showErrors() && errors()['name']">
-          <label for="f-name">שם מלא</label>
-          <input id="f-name" type="text" autocomplete="name" [value]="name()" (input)="name.set(val($event))"/>
-          @if (showErrors() && errors()['name']) { <span class="msg">{{ errors()['name'] }}</span> }
-        </div>
-        <div class="field" [class.err]="showErrors() && errors()['phone']">
-          <label for="f-phone">טלפון</label>
-          <input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="05X-XXXXXXX" dir="ltr"
-                 [value]="phone()" (input)="phone.set(val($event))"/>
-          @if (showErrors() && errors()['phone']) { <span class="msg">{{ errors()['phone'] }}</span> }
-        </div>
+      <app-phone-verify [initialPhone]="typedPhone" (verified)="onVerified()"/>
+      @if (showErrors() && errors()['phone']) { <span class="msg phone-msg">{{ errors()['phone'] }}</span> }
+      <div class="field" [class.err]="showErrors() && errors()['name']">
+        <label for="f-name">שם</label>
+        <input id="f-name" type="text" autocomplete="name" [value]="name()" (input)="name.set(val($event))"/>
+        @if (showErrors() && errors()['name']) { <span class="msg">{{ errors()['name'] }}</span> }
       </div>
 
       @if (isDelivery()) {
@@ -137,6 +131,13 @@
         <div class="pay soon"><span class="radio"></span><span class="ico">📱</span>תשלום אונליין באשראי<span class="badge">בקרוב</span></div>
       </div>
     </section>
+
+    @if (askConsent()) {
+      <label class="consent" for="f-consent">
+        <input id="f-consent" type="checkbox" [checked]="consent()" (change)="consent.set($any($event.target).checked)"/>
+        <span>אני רוצה לקבל מבצעים והטבות מטורוז מיט ב-SMS ובוואטסאפ. אפשר להסיר בכל עת.</span>
+      </label>
+    }
 
     <!-- SUMMARY -->
     <section class="card summary">

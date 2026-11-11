@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed, viewChild } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, viewChild, effect, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { DemoBannerComponent } from '../../../shared/components/demo-banner/demo-banner.component';
 import { CartService, FulfillmentMode } from '../../../core/services/cart.service';
@@ -8,6 +8,9 @@ import { deliveryFeeFor, etaMinutesFor, distanceKm } from '../../../core/models/
 import { DeliveryAddress, GeoPoint, Order } from '../../../core/models/order.model';
 import { ToastComponent } from '../../../shared/components/toast/toast.component';
 import { LocationPickerComponent } from '../../../shared/components/location-picker/location-picker.component';
+import { PhoneVerifyComponent } from '../../../shared/components/phone-verify/phone-verify.component';
+import { AuthService, displayPhone } from '../../../core/services/auth.service';
+import { CustomerService } from '../../../core/services/customer.service';
 
 type PayMethod = 'cash' | 'card_on_delivery';
 
@@ -21,7 +24,7 @@ const PLACE_TIMEOUT_MS = 15000;
 @Component({
   selector: 'app-checkout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DemoBannerComponent, RouterLink, ToastComponent, LocationPickerComponent],
+  imports: [DemoBannerComponent, RouterLink, ToastComponent, LocationPickerComponent, PhoneVerifyComponent],
   templateUrl: './checkout.component.html',
   styleUrl: './checkout.component.scss',
 })
@@ -29,6 +32,8 @@ export class CheckoutComponent {
   protected cart = inject(CartService);
   protected settingsSvc = inject(SettingsService);
   private orders = inject(CustomerOrderService);
+  protected auth = inject(AuthService);
+  protected customers = inject(CustomerService);
   private router = inject(Router);
   private toast = viewChild<ToastComponent>('toast');
 
@@ -36,7 +41,11 @@ export class CheckoutComponent {
   private p = this.cart.profile();
 
   readonly name = signal(this.p.name);
-  readonly phone = signal(this.p.phone);
+  /** Phone typed before verification (prefilled from this device). */
+  readonly typedPhone = this.p.phone;
+  /** Promotions opt-in. Unchecked by default; only shown until the customer has opted in. */
+  readonly consent = signal(false);
+  readonly askConsent = computed(() => this.customers.me()?.marketingConsent !== true);
   readonly city = signal(this.p.address.city);
   readonly street = signal(this.p.address.street);
   readonly floor = signal(this.p.address.floor ?? '');
@@ -73,7 +82,7 @@ export class CheckoutComponent {
   readonly errors = computed(() => {
     const e: Record<string, string> = {};
     if (!this.name().trim()) e['name'] = 'נא למלא שם';
-    if (!/^0\d{8,9}$/.test(this.phone().replace(/\D/g, ''))) e['phone'] = 'מספר טלפון לא תקין';
+    if (!this.auth.phone()) e['phone'] = 'יש לאמת את מספר הטלפון';
     if (this.isDelivery()) {
       if (!this.effectiveCity()) e['city'] = 'נא לבחור עיר';
       // Many homes have no house number: a pin on the map is enough on its own.
@@ -91,6 +100,27 @@ export class CheckoutComponent {
     if (this.missingForMin() > 0) return `חסרים ₪${this.missingForMin()} למינימום הזמנה במשלוח`;
     return '';
   });
+
+  constructor() {
+    // Sign-in is restored asynchronously on page load, and can also happen right here.
+    effect(() => { if (this.auth.phone()) untracked(() => void this.onVerified()); });
+  }
+
+  private profileLoaded = false;
+
+  /** After verification, bring back the customer's saved details (e.g. on a new phone). */
+  async onVerified(): Promise<void> {
+    if (this.profileLoaded) return;
+    this.profileLoaded = true;
+    const rec = await this.customers.load().catch(() => null);
+    if (!rec) return;
+    if (!this.name().trim() && rec.name) this.name.set(rec.name);
+    const a = rec.address;
+    if (a && !this.street().trim() && !this.location()) {
+      this.street.set(a.street ?? ''); this.floor.set(a.floor ?? ''); this.apartment.set(a.apartment ?? '');
+      this.addrNotes.set(a.notes ?? ''); this.location.set(a.location);
+    }
+  }
 
   setMode(m: FulfillmentMode): void { this.cart.mode.set(m); }
 
@@ -115,7 +145,7 @@ export class CheckoutComponent {
       source: 'app',
       payment: PAY_LABELS[this.pay()],
       customerName: this.name().trim(),
-      customerPhone: this.phone().replace(/\D/g, ''),
+      customerPhone: displayPhone(this.auth.phone()).replace(/\D/g, ''),
       address,
       createdAt: Date.now(),
       etaMinutes: this.eta(),
@@ -133,9 +163,12 @@ export class CheckoutComponent {
         new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), PLACE_TIMEOUT_MS)),
       ]);
       this.cart.saveProfile({
-        name: order.customerName!, phone: this.phone(),
+        name: order.customerName!, phone: displayPhone(this.auth.phone()),
         address: address ?? this.cart.profile().address,
       });
+      // Profile + consent are a bonus: never fail the order because of them.
+      this.customers.recordOrder(order.customerName!, address, this.askConsent() && this.consent() ? true : null)
+        .catch(() => undefined);
       this.cart.clear();
       this.router.navigate(['/track', res.id]);
     } catch {

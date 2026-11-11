@@ -33,14 +33,13 @@ export class ReviewService {
   async hasReview(orderId: string): Promise<boolean> {
     if (this.ratedLocally().includes(orderId)) return true;
     if (environment.demo) return false;
-    await this.auth.ensureCustomer();
+    if (!(await this.auth.customer())) return true; // not signed in → can't rate, hide the form
     const snap = await get(ref(this.db, `reviews/${orderId}`));
     return snap.exists();
   }
 
   async submit(r: Review): Promise<void> {
     if (environment.demo) { this.rememberRated(r.orderId); return; }
-    await this.auth.ensureCustomer();
     const clean: Review = { ...r, stars: Math.min(5, Math.max(1, Math.round(r.stars))) };
     if (!clean.comment) delete clean.comment;
     if (!clean.name) delete clean.name;

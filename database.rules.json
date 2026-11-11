@@ -31,7 +31,7 @@
       ".write": "auth != null && root.child('staff/' + auth.uid).val() === true",
       "$id": {
         ".read": "auth != null && data.child('customerUid').val() === auth.uid",
-        ".write": "auth != null && !data.exists() && newData.child('customerUid').val() === auth.uid && newData.child('status').val() === 'new'",
+        ".write": "auth != null && auth.token.phone_number != null && !data.exists() && newData.child('customerUid').val() === auth.uid && newData.child('status').val() === 'new'",
         ".validate": "newData.hasChildren(['num', 'status', 'type', 'total', 'createdAt'])"
       }
     },
@@ -54,6 +54,43 @@
       ".read": true,
       ".write": "auth != null",
       ".validate": "(!data.exists() && newData.child('count').val() === 1 && newData.child('sum').val() >= 1 && newData.child('sum').val() <= 5) || (data.exists() && newData.child('count').val() === data.child('count').val() + 1 && newData.child('sum').val() >= data.child('sum').val() + 1 && newData.child('sum').val() <= data.child('sum').val() + 5)"
+    },
+    "customers": {
+      ".read": "auth != null && root.child('staff/' + auth.uid).val() === true",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid && auth.token.phone_number != null",
+        ".validate": "newData.hasChildren(['phone', 'marketingConsent'])",
+        "phone": {
+          ".validate": "newData.val() === auth.token.phone_number || (data.exists() && newData.val() === data.val())"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length <= 80"
+        },
+        "marketingConsent": {
+          ".write": "auth != null && root.child('staff/' + auth.uid).val() === true",
+          ".validate": "newData.isBoolean()"
+        },
+        "consentAt": {
+          ".write": "auth != null && root.child('staff/' + auth.uid).val() === true",
+          ".validate": "newData.isNumber()"
+        },
+        "ordersCount": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "lastOrderAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "address": {
+          ".validate": "newData.hasChildren()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
     }
   }
 }

@@ -181,3 +181,10 @@ h1 { font-size: 2rem; font-weight: 900; color: var(--gold2); letter-spacing: -.0
   .star { color: var(--gold); }
   b { color: var(--cream); font-weight: 900; }
 }
+
+.account-btn {
+  position: absolute; top: 14px; left: 16px; z-index: 2;
+  width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: rgba(18,11,4,.6); border: 1px solid var(--border-strong); text-decoration: none; font-size: 1.2rem;
+  backdrop-filter: blur(6px);
+}

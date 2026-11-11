@@ -6,6 +6,7 @@
       <app-brand-mark [size]="40" subtitle="ADMIN — ניהול תפריט"/>
       <div class="topbar-actions">
         <button class="btn gold" (click)="settingsOpen.set(true)">⚙ הגדרות משלוח</button>
+        <button class="btn" (click)="customersOpen.set(true)">👥 לקוחות ומבצעים</button>
         <button class="btn" (click)="reviewsOpen.set(true)">⭐ דירוגים</button>
         <button class="btn" (click)="exportJSON()">⬇ ייצוא JSON</button>
         <button class="btn" (click)="importFileInput.click()">⬆ ייבוא</button>
@@ -254,4 +255,8 @@
 
 @if (reviewsOpen()) {
   <app-reviews-dialog (closed)="reviewsOpen.set(false)"/>
+}
+
+@if (customersOpen()) {
+  <app-customers-dialog (closed)="customersOpen.set(false)"/>
 }

@@ -23,6 +23,12 @@ export const routes: Routes = [
       import('./features/customer/track/track.component').then(m => m.TrackComponent),
   },
   {
+    path: 'account',
+    title: 'טורוז מיט – החשבון שלי',
+    loadComponent: () =>
+      import('./features/customer/account/account.component').then(m => m.AccountComponent),
+  },
+  {
     path: 'kiosk',
     canActivate: [staffGuard],
     loadComponent: () =>
