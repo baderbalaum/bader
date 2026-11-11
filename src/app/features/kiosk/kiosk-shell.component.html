@@ -1,0 +1,193 @@
+<!-- WELCOME -->
+@if (screen() === 'welcome') {
+  <div class="screen welcome-screen">
+    <div class="welcome-top">
+      <img class="logo-img" src="Toroz.jpg" alt="TOROZ MEAT"/>
+      <div class="welcome-title">ברוכים הבאים<span>טורוז מיט</span></div>
+      <div class="welcome-sub">TOROZ MEAT — המטבח שלנו, הטעם שלכם</div>
+      <button class="start-btn" (click)="goToDine()">הזמן עכשיו</button>
+    </div>
+    <div class="welcome-footer">לחץ להזמנה עצמאית</div>
+  </div>
+}
+
+<!-- DINE IN / TAKEAWAY -->
+@if (screen() === 'dine') {
+  <div class="screen dine-screen">
+    <div class="screen-inner">
+      <button class="back-btn" (click)="goToWelcome()">חזרה →</button>
+      <h2>איך תרצו לאכול?</h2>
+      <div class="dine-options">
+        <button class="dine-btn" (click)="selectDine('here')">
+          <span class="dine-icon">🪑</span>
+          <span class="dine-label">לשבת פה</span>
+        </button>
+        <button class="dine-btn" (click)="selectDine('takeaway')">
+          <span class="dine-icon">🥡</span>
+          <span class="dine-label">לקחת</span>
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- CUSTOMER INFO -->
+@if (screen() === 'customer') {
+  <div class="screen customer-screen">
+    <div class="screen-inner">
+      <button class="back-btn" (click)="screen.set('dine')">חזרה →</button>
+      <h2>פרטי הלקוח</h2>
+      <div class="field">
+        <label>שם</label>
+        <input type="text" [value]="customerName()" (input)="customerName.set($any($event.target).value)" placeholder="שמך הפרטי"/>
+      </div>
+      <div class="field">
+        <label>טלפון</label>
+        <input type="text" [value]="customerPhone()" (input)="customerPhone.set($any($event.target).value)" placeholder="050-0000000" inputmode="tel"/>
+      </div>
+      <div class="cust-actions">
+        <button class="btn gold" (click)="submitCustomer()">המשך →</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- CATEGORY GRID -->
+@if (screen() === 'category') {
+  <div class="screen category-screen">
+    <div class="cat-topbar">
+      <button class="back-btn" (click)="screen.set('customer')">חזרה →</button>
+      <app-brand-mark [size]="40"/>
+      <div class="cart-btn-wrap">
+        @if (cartCount() > 0) {
+          <button class="cart-btn" (click)="cartOpen.set(true)">
+            🛒 <span class="cart-badge">{{ cartCount() }}</span> ₪{{ cartTotal() }}
+          </button>
+        }
+      </div>
+    </div>
+    @if (menuSvc.menuResource.isLoading()) {
+      <div class="loading">טוען תפריט...</div>
+    } @else {
+      <div class="cat-grid">
+        @for (entry of sortedCategories; track entry[0]) {
+          <button class="cat-card" (click)="openCategory(entry[0])">
+            <span class="cat-icon">{{ entry[1].icon }}</span>
+            <span class="cat-name">{{ entry[1].title }}</span>
+            <span class="cat-sub">{{ entry[1].sub }}</span>
+          </button>
+        }
+      </div>
+    }
+  </div>
+}
+
+<!-- MENU ITEMS -->
+@if (screen() === 'menu') {
+  <div class="screen menu-screen">
+    <div class="menu-topbar">
+      <button class="back-btn" (click)="goToCategories()">חזרה →</button>
+      <app-brand-mark [size]="40"/>
+      <div class="menu-title">
+        <span>{{ currentCatData?.icon }}</span>
+        <span>{{ currentCatData?.title }}</span>
+      </div>
+      @if (cartCount() > 0) {
+        <button class="cart-btn" (click)="cartOpen.set(true)">
+          🛒 <span class="cart-badge">{{ cartCount() }}</span> ₪{{ cartTotal() }}
+        </button>
+      }
+    </div>
+    <div class="items-grid">
+      @for (item of currentCatItems; track item.id) {
+        <button class="item-card" (click)="openCustomizer(item)">
+          @if (item.imageUrl) {
+            <img class="item-img" [src]="item.imageUrl" [alt]="item.name" loading="lazy"/>
+          } @else {
+            <div class="item-img-placeholder">{{ currentCatData?.icon }}</div>
+          }
+          <div class="item-info">
+            <div class="item-name">{{ item.name }}</div>
+            <div class="item-desc">{{ item.desc }}</div>
+            <div class="item-price">₪{{ item.basePrice }}</div>
+          </div>
+        </button>
+      }
+    </div>
+  </div>
+}
+
+<!-- PAYMENT -->
+@if (screen() === 'payment') {
+  <div class="screen payment-screen">
+    <div class="screen-inner">
+      <button class="back-btn" (click)="screen.set('menu')">חזרה →</button>
+      <h2>בחר אמצעי תשלום</h2>
+      <div class="payment-total">לתשלום: <strong>₪{{ cartTotal() }}</strong></div>
+      <div class="payment-options">
+        <button class="pay-btn" (click)="selectPayment('cash')">
+          <span class="pay-icon">💵</span>
+          <span>מזומן</span>
+        </button>
+        <button class="pay-btn" (click)="selectPayment('credit')">
+          <span class="pay-icon">💳</span>
+          <span>אשראי</span>
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- CREDIT FLOW OVERLAY -->
+@if (screen() === 'payment' && paymentMethod() === 'credit') {
+  <div class="credit-overlay">
+    <div class="credit-card-anim">
+      <div class="credit-step">{{ creditSteps[creditStep()] }}</div>
+      <div class="credit-amount">₪{{ cartTotal() }}</div>
+      @if (creditStep() < 2) {
+        <button class="btn sm muted" (click)="cancelCredit()">ביטול</button>
+      }
+    </div>
+  </div>
+}
+
+<!-- CONFIRMATION / RECEIPT -->
+@if (screen() === 'confirmation') {
+  <div class="screen confirm-screen">
+    <div class="receipt">
+      <div class="receipt-check">✅</div>
+      <h2>הזמנה התקבלה!</h2>
+      <p class="order-num">#{{ orderNum() }}</p>
+      <div class="receipt-lines">
+        @for (line of receiptLines(); track $index) {
+          <div class="receipt-line" [class.divider]="line.startsWith('─')">{{ line }}</div>
+        }
+      </div>
+      <button class="btn gold" (click)="newOrder()">הזמנה חדשה</button>
+    </div>
+  </div>
+}
+
+<!-- ITEM CUSTOMIZER MODAL -->
+@if (customizerItem()) {
+  <app-item-customizer
+    [item]="customizerItem()!"
+    [meta]="meta"
+    (added)="onItemAdded($event)"
+    (closed)="closeCustomizer()"
+  />
+}
+
+<!-- CART DRAWER -->
+@if (cartOpen()) {
+  <app-cart-drawer
+    [cart]="cart()"
+    [total]="cartTotal()"
+    (closed)="cartOpen.set(false)"
+    (removed)="removeCartItem($event)"
+    (checkout)="confirmOrder()"
+  />
+}
+
+<app-toast #toast/>
+<app-confirm-dialog/>

@@ -1,0 +1,43 @@
+<div class="drawer-bg" (click)="onBackdrop($event)">
+  <div class="drawer">
+    <div class="drawer-head">
+      <h3>הסל שלי</h3>
+      <button class="x-btn" (click)="closed.emit()">×</button>
+    </div>
+
+    <div class="drawer-body">
+      @if (cart().length === 0) {
+        <div class="empty">
+          <span class="e-ico">🛒</span>
+          <h3>הסל ריק</h3>
+          <p>הוסף מנות מהתפריט</p>
+        </div>
+      } @else {
+        @for (item of cart(); track item.id) {
+          <div class="cart-line">
+            <div class="line-info">
+              <div class="line-name">{{ item.qty }}× {{ item.name }}</div>
+              @for (d of item.details; track d) {
+                <div class="line-detail">{{ d }}</div>
+              }
+            </div>
+            <div class="line-right">
+              <div class="line-price">₪{{ item.unitPrice * item.qty }}</div>
+              <button class="remove-btn" (click)="removed.emit(item.id)">✕</button>
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+    <div class="drawer-foot">
+      <div class="foot-total">
+        <span>סה"כ</span>
+        <span class="total-amt">₪{{ total() }}</span>
+      </div>
+      <button class="btn gold checkout-btn" [disabled]="cart().length === 0" (click)="checkout.emit()">
+        לתשלום →
+      </button>
+    </div>
+  </div>
+</div>

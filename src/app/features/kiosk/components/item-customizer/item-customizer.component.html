@@ -1,0 +1,126 @@
+<div class="customizer-bg" (click)="onBackdrop($event)">
+  <div class="customizer">
+    <div class="cust-head">
+      <div>
+        <div class="cust-name">{{ item().name }}</div>
+        <div class="cust-desc">{{ item().desc }}</div>
+      </div>
+      <button class="x-btn" (click)="closed.emit()">×</button>
+    </div>
+
+    <div class="cust-body">
+
+      <!-- Burger sizes -->
+      @if (item().hasBurgerSize && item().burgerSizes) {
+        <div class="section-title">מידת קציצה</div>
+        <div class="chips">
+          @for (s of item().burgerSizes!; track $index) {
+            <button class="chip" [class.active]="sel().burgerSize === $index" (click)="setBurgerSize($index)">{{ s.label }}</button>
+          }
+        </div>
+      }
+
+      <!-- Size options -->
+      @if (item().hasSizeOption && item().sizes) {
+        <div class="section-title">גודל</div>
+        <div class="chips">
+          @for (s of item().sizes!; track $index) {
+            <button class="chip" [class.active]="sel().size === $index" (click)="setSize($index)">{{ s.label }}</button>
+          }
+        </div>
+      }
+
+      <!-- Spreads -->
+      @if (item().hasSpreads) {
+        <div class="section-title">ממרחים</div>
+        <div class="chips">
+          @for (v of effectiveMeta.spreads; track v) {
+            <button class="chip" [class.active]="sel().spreads.includes(v)" (click)="toggleSpread(v)">{{ v }}</button>
+          }
+        </div>
+      }
+
+      <!-- Veggies -->
+      @if (item().hasVeggies) {
+        <div class="section-title">ירקות</div>
+        <div class="chips">
+          @for (v of effectiveMeta.veggies; track v) {
+            <button class="chip" [class.active]="sel().veggies.includes(v)" (click)="toggleVeggie(v)">{{ v }}</button>
+          }
+        </div>
+      }
+
+      <!-- Fixed veggies (read-only) -->
+      @if (item().fixedVeggies?.length) {
+        <div class="section-title">ירקות קבועים</div>
+        <div class="chips">
+          @for (v of item().fixedVeggies!; track v) {
+            <span class="chip fixed">{{ v }}</span>
+          }
+        </div>
+      }
+
+      <!-- Sauces -->
+      @if (item().hasSauces) {
+        <div class="section-title">רטבים</div>
+        <div class="chips">
+          @for (v of effectiveMeta.sauces; track v) {
+            <button class="chip" [class.active]="sel().sauces.includes(v)" (click)="toggleSauce(v)">{{ v }}</button>
+          }
+        </div>
+      }
+
+      <!-- Fixed sauces (read-only) -->
+      @if (item().fixedSauces?.length) {
+        <div class="section-title">רטבים קבועים</div>
+        <div class="chips">
+          @for (v of item().fixedSauces!; track v) {
+            <span class="chip fixed">{{ v }}</span>
+          }
+        </div>
+      }
+
+      <!-- Item-specific extras -->
+      @if (item().hasExtras && item().extras?.length) {
+        <div class="section-title">תוספות (+₪5)</div>
+        <div class="chips">
+          @for (e of item().extras!; track $index) {
+            <button class="chip" [class.active]="sel().extras.includes($index)" (click)="toggleExtra($index)">{{ e.label }}</button>
+          }
+        </div>
+      }
+
+      <!-- Global extras -->
+      @if (item().hasExtras) {
+        <div class="section-title">תוספות כלליות (+₪5)</div>
+        <div class="chips">
+          @for (e of effectiveMeta.extras; track $index) {
+            <button class="chip" [class.active]="sel().globalExtras.includes($index)" (click)="toggleGlobalExtra($index)">{{ e.label }}</button>
+          }
+        </div>
+      }
+
+      <!-- Burger extras -->
+      @if (item().burgerExtras?.length) {
+        <div class="section-title">תוספות לבורגר</div>
+        <div class="chips">
+          @for (e of item().burgerExtras!; track $index) {
+            <button class="chip" [class.active]="sel().burgerExtras.includes($index)" (click)="toggleBurgerExtra($index)">{{ e.label }}</button>
+          }
+        </div>
+      }
+
+    </div>
+
+    <div class="cust-foot">
+      <div class="qty-ctrl">
+        <button class="qty-btn" (click)="changeQty(-1)">−</button>
+        <span>{{ qty() }}</span>
+        <button class="qty-btn" (click)="changeQty(1)">+</button>
+      </div>
+      <button class="btn gold add-btn" (click)="addToCart()">
+        הוסף לסל · ₪{{ unitPrice() * qty() }}
+      </button>
+    </div>
+  </div>
+</div>

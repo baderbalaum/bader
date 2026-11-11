@@ -1,0 +1,270 @@
+<!-- ══ PIN GATE ══ -->
+@if (!pinSvc.isAuthenticated()) {
+  <div class="gate">
+    <div class="gate-card">
+      <div class="lock">🔒</div>
+      <h1>ניהול תפריט</h1>
+      <p>הזן קוד גישה</p>
+      <input
+        type="password" inputmode="numeric" maxlength="6"
+        class="pin-input" placeholder="••••" autocomplete="off"
+        [value]="pinInput()"
+        (input)="pinInput.set($any($event.target).value)"
+        (keydown.enter)="tryUnlock()"
+      />
+      <button class="gate-btn" (click)="tryUnlock()">כניסה</button>
+      <div class="gate-err">{{ pinError() }}</div>
+      <div class="gate-hint">קוד ברירת מחדל: 1234</div>
+    </div>
+  </div>
+}
+
+<!-- ══ APP ══ -->
+@if (pinSvc.isAuthenticated()) {
+  <div class="app">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <app-brand-mark [size]="40" subtitle="ADMIN — ניהול תפריט"/>
+      <div class="topbar-actions">
+        <button class="btn" (click)="exportJSON()">⬇ ייצוא JSON</button>
+        <button class="btn" (click)="importFileInput.click()">⬆ ייבוא</button>
+        <input #importFileInput type="file" accept="application/json" style="display:none" (change)="importJSON($event)"/>
+        <button class="btn danger" (click)="resetDefaults()">↺ איפוס</button>
+        <button class="btn ghost" (click)="lock()">🔒 נעל</button>
+      </div>
+    </div>
+
+    <div class="main">
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="sidebar-h"><span class="ttl">קטגוריות</span></div>
+        <div class="cat-list">
+          @if (menuSvc.menuResource.isLoading()) {
+            <div class="loading-cats">טוען...</div>
+          }
+          @for (entry of sortedCats(); track entry[0]) {
+            <div class="cat-row" [class.active]="activeCat() === entry[0]" (click)="selectCat(entry[0])">
+              <span class="cat-icon">{{ entry[1].icon }}</span>
+              <div class="cat-info">
+                <div class="cat-name">{{ entry[1].title }}</div>
+                <div class="cat-sub">{{ entry[1].sub }}</div>
+              </div>
+              <span class="cat-count">{{ (entry[1].items ?? {} | keyvalue).length }}</span>
+              <button class="cat-del" (click)="$event.stopPropagation(); deleteCat(entry[0])">🗑</button>
+            </div>
+          }
+        </div>
+        <div class="sidebar-foot">
+          <button class="btn gold" (click)="openCatModal()">+ קטגוריה חדשה</button>
+        </div>
+      </aside>
+
+      <!-- CONTENT -->
+      <section class="content">
+        <div class="content-h">
+          <div>
+            <h2>
+              <span>{{ activeCatData()?.icon ?? '📋' }}</span>
+              <span>{{ activeCatData()?.title ?? 'בחר קטגוריה' }}</span>
+            </h2>
+            <div class="meta">{{ activeCatData()?.sub }}</div>
+          </div>
+          <div class="content-tools">
+            <input type="text" class="search" placeholder="🔍 חיפוש מנה..."
+              [value]="searchQ()" (input)="searchQ.set($any($event.target).value)"/>
+            <button class="btn gold" (click)="openItemModal()">+ הוסף מנה</button>
+          </div>
+        </div>
+
+        <div class="items-grid">
+          @if (!activeCatData()) {
+            <div class="empty" style="grid-column:1/-1">
+              <span class="e-ico">📋</span>
+              <h3>בחר קטגוריה</h3>
+              <p>הוסף קטגוריה כדי להתחיל</p>
+            </div>
+          }
+          @for (item of filteredItems(); track item.id) {
+            <div class="item-card">
+              @if (item.imageUrl) {
+                <img class="item-img" [src]="item.imageUrl" [alt]="item.name" loading="lazy"/>
+              } @else {
+                <div class="item-img-placeholder">{{ activeCatData()?.icon }}</div>
+              }
+              <div class="item-body">
+                <div class="item-price">₪{{ item.basePrice }}</div>
+                <div class="item-name">{{ item.name }}</div>
+                <div class="item-desc">{{ item.desc }}</div>
+                <div class="item-tags">
+                  @if (item.hasSpreads) { <span class="tag">ממרחים</span> }
+                  @if (item.hasVeggies) { <span class="tag">ירקות</span> }
+                  @if (item.hasSauces)  { <span class="tag">רטבים</span> }
+                  @if (item.hasExtras)  { <span class="tag">תוספות</span> }
+                  @if (item.hasSizeOption) { <span class="tag">{{ item.sizes?.length }} גדלים</span> }
+                  @if (item.hasBurgerSize) { <span class="tag">{{ item.burgerSizes?.length }} מידות</span> }
+                </div>
+                <div class="item-actions">
+                  <button class="btn sm" (click)="openItemModal(item.id)">✏️ ערוך</button>
+                  <button class="btn sm danger" (click)="deleteItem(item.id)">🗑 מחק</button>
+                </div>
+              </div>
+            </div>
+          }
+          <!-- Add card -->
+          <div class="add-card" (click)="openItemModal()">
+            <span class="plus">+</span>
+            <span>הוסף מנה</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+}
+
+<!-- ══ ITEM MODAL ══ -->
+@if (itemModalOpen()) {
+  <div class="modal-bg open" (click)="$any($event.target).classList.contains('modal-bg') && closeItemModal()">
+    <div class="modal">
+      <div class="modal-h">
+        <h3>{{ editingId() != null ? 'עריכת מנה' : 'מנה חדשה' }}</h3>
+        <button class="x-btn" (click)="closeItemModal()">×</button>
+      </div>
+      <div class="modal-b">
+
+        <!-- Image upload -->
+        <div class="image-upload-row">
+          <div class="image-preview" (click)="imageInput.click()">
+            @if (imagePreview()) {
+              <img [src]="imagePreview()!" alt="תמונת מנה"/>
+            } @else {
+              <div class="no-img">📷<span>העלה תמונה</span></div>
+            }
+          </div>
+          <input #imageInput type="file" accept="image/*" style="display:none" (change)="onImagePicked($event)"/>
+          <button class="btn sm" (click)="imageInput.click()">{{ imagePreview() ? 'החלף תמונה' : 'בחר תמונה' }}</button>
+        </div>
+
+        <div class="field">
+          <label>שם המנה *</label>
+          <input type="text" [value]="fName()" (input)="fName.set($any($event.target).value)" placeholder="לדוגמה: טורטיה אנטריקוט"/>
+        </div>
+        <div class="field">
+          <label>תיאור קצר</label>
+          <input type="text" [value]="fDesc()" (input)="fDesc.set($any($event.target).value)" placeholder="לדוגמה: בשר פרוס דק 170 גרם"/>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>קטגוריה</label>
+            <select [value]="fTargetCat()" (change)="fTargetCat.set($any($event.target).value)">
+              @for (entry of sortedCats(); track entry[0]) {
+                <option [value]="entry[0]">{{ entry[1].icon }} {{ entry[1].title }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label>מחיר בסיס (₪)</label>
+            <input type="number" [value]="fPrice()" (input)="fPrice.set(+$any($event.target).value||0)" min="0" step="1"/>
+          </div>
+        </div>
+
+        <div class="section-title">אפשרויות התאמה</div>
+        <div class="toggles">
+          <div class="toggle" [class.on]="fHasSpreads()" (click)="fHasSpreads.update(v=>!v)">
+            <div class="sw"></div><span>ממרחים</span>
+          </div>
+          <div class="toggle" [class.on]="fHasVeggies()" (click)="fHasVeggies.update(v=>!v)">
+            <div class="sw"></div><span>ירקות</span>
+          </div>
+          <div class="toggle" [class.on]="fHasSauces()" (click)="fHasSauces.update(v=>!v)">
+            <div class="sw"></div><span>רטבים</span>
+          </div>
+          <div class="toggle" [class.on]="fHasExtras()" (click)="fHasExtras.update(v=>!v)">
+            <div class="sw"></div><span>תוספות (₪5)</span>
+          </div>
+          <div class="toggle" [class.on]="fHasSizeOption()" (click)="fHasSizeOption.update(v=>!v)">
+            <div class="sw"></div><span>בחירת גודל</span>
+          </div>
+          <div class="toggle" [class.on]="fHasBurgerSize()" (click)="fHasBurgerSize.update(v=>!v)">
+            <div class="sw"></div><span>מידת קציצה</span>
+          </div>
+        </div>
+
+        @if (fHasSizeOption()) {
+          <div class="section-title">גדלים זמינים</div>
+          @for (s of fSizes(); track $index) {
+            <div class="size-row">
+              <input type="text" placeholder="שם הגודל" [value]="s.label" (input)="updateSizeLabel($index, $any($event.target).value)"/>
+              <input type="number" placeholder="₪" [value]="s.price" min="0" (input)="updateSizePrice($index, +$any($event.target).value||0)"/>
+              <button class="x-mini" (click)="removeSize($index)">×</button>
+            </div>
+          }
+          <button class="add-mini" (click)="addSize()">+ הוסף גודל</button>
+        }
+
+        @if (fHasBurgerSize()) {
+          <div class="section-title">מידות קציצה</div>
+          @for (s of fBSizes(); track $index) {
+            <div class="size-row">
+              <input type="text" placeholder="שם המידה" [value]="s.label" (input)="updateBSizeLabel($index, $any($event.target).value)"/>
+              <input type="number" placeholder="₪" [value]="s.price" min="0" (input)="updateBSizePrice($index, +$any($event.target).value||0)"/>
+              <button class="x-mini" (click)="removeBSize($index)">×</button>
+            </div>
+          }
+          <button class="add-mini" (click)="addBSize()">+ הוסף מידה</button>
+        }
+
+      </div>
+      <div class="modal-f">
+        @if (editingId() != null) {
+          <button class="btn danger" (click)="deleteItem(editingId()!); closeItemModal()">🗑 מחק</button>
+        } @else { <div></div> }
+        <div class="modal-f-right">
+          <button class="btn" (click)="closeItemModal()">ביטול</button>
+          <button class="btn gold" [disabled]="uploading()" (click)="saveItem()">
+            {{ uploading() ? 'מעלה...' : 'שמור' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ══ CATEGORY MODAL ══ -->
+@if (catModalOpen()) {
+  <div class="modal-bg open" (click)="$any($event.target).classList.contains('modal-bg') && closeCatModal()">
+    <div class="modal modal-sm">
+      <div class="modal-h">
+        <h3>קטגוריה חדשה</h3>
+        <button class="x-btn" (click)="closeCatModal()">×</button>
+      </div>
+      <div class="modal-b">
+        <div class="row2">
+          <div class="field">
+            <label>שם</label>
+            <input type="text" [value]="cfTitle()" (input)="cfTitle.set($any($event.target).value)" placeholder="לדוגמה: סלטים"/>
+          </div>
+          <div class="field">
+            <label>אייקון</label>
+            <input type="text" [value]="cfIcon()" (input)="cfIcon.set($any($event.target).value)" placeholder="🥗" maxlength="3"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>תיאור משנה</label>
+          <input type="text" [value]="cfSub()" (input)="cfSub.set($any($event.target).value)" placeholder="לדוגמה: טריים ובריאים"/>
+        </div>
+      </div>
+      <div class="modal-f">
+        <div></div>
+        <div class="modal-f-right">
+          <button class="btn" (click)="closeCatModal()">ביטול</button>
+          <button class="btn gold" (click)="saveCat()">שמור</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<app-toast #toast/>
+<app-confirm-dialog #confirm/>

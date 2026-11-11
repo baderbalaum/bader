@@ -1,0 +1,127 @@
+<!-- TOPBAR -->
+<div class="topbar">
+  <app-brand-mark [size]="44" subtitle="KITCHEN — מסך מטבח"/>
+
+  <div class="filter-tabs">
+    <button class="tab" [class.active]="filter()==='active'" (click)="setFilter('active')">
+      פעיל <span class="pill">{{ counts().active }}</span>
+    </button>
+    <button class="tab" [class.active]="filter()==='new'" (click)="setFilter('new')">
+      חדש <span class="pill">{{ counts().new }}</span>
+    </button>
+    <button class="tab" [class.active]="filter()==='preparing'" (click)="setFilter('preparing')">
+      בהכנה <span class="pill">{{ counts().preparing }}</span>
+    </button>
+    <button class="tab" [class.active]="filter()==='ready'" (click)="setFilter('ready')">
+      מוכן <span class="pill">{{ counts().ready }}</span>
+    </button>
+    <button class="tab" [class.active]="filter()==='done'" (click)="setFilter('done')">
+      הסתיים <span class="pill">{{ counts().done }}</span>
+    </button>
+  </div>
+
+  <div class="topbar-actions">
+    <div class="clock">{{ clock() }}</div>
+    <button class="sound-toggle" [class.off]="!soundOn()" (click)="toggleSound()">
+      <span class="led"></span>
+      <span>{{ soundOn() ? 'צליל פעיל' : 'ללא צליל' }}</span>
+    </button>
+  </div>
+</div>
+
+<!-- BOARD -->
+<div class="board">
+  @if (visibleOrders().length === 0) {
+    <div class="empty" style="grid-column:1/-1">
+      <span class="e-ico">🍽️</span>
+      <h3>אין הזמנות פעילות</h3>
+      <p>הזמנות חדשות יופיעו כאן אוטומטית</p>
+    </div>
+  }
+
+  @for (order of visibleOrders(); track order.id) {
+    <div class="order-card" [class]="order.status">
+
+      <!-- HEAD -->
+      <div class="card-head">
+        <div class="card-top">
+          <div class="order-num"><small>#</small>{{ order.num }}</div>
+          <div class="timer" [class]="timerClass(order.createdAt)">
+            ⏱ {{ formatElapsed(order.createdAt) }}
+          </div>
+        </div>
+        <div class="order-meta">
+          <span class="chip" [class]="order.type === 'here' ? 'type-here' : 'type-takeaway'">
+            {{ order.type === 'here' ? '🪑 לשבת פה' : '🥡 לקחת' }}
+          </span>
+          @if (order.payment) {
+            <span class="chip pay">💳 {{ order.payment }}</span>
+          }
+          <span class="chip">{{ formatTime(order.createdAt) }}</span>
+        </div>
+        @if (order.customerName) {
+          <div class="cust-row">
+            <span>👤</span>
+            <span class="cust-name">{{ order.customerName }}</span>
+            @if (order.customerPhone) {
+              <span class="cust-phone">{{ order.customerPhone }}</span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- ITEMS -->
+      <div class="card-body">
+        @for (item of order.items; track $index) {
+          <div class="line" [class.done]="order.lineDone?.[$index]" (click)="toggleLine(order, $index)">
+            <div class="qty">{{ item.qty }}×</div>
+            <div class="line-info">
+              <div class="line-name">
+                <span class="check">✓</span> {{ item.name }}
+              </div>
+              @if (item.details?.length) {
+                <div class="line-opts">
+                  @for (d of item.details; track d) { <span>{{ d }}</span> }
+                </div>
+              }
+            </div>
+          </div>
+        }
+        @if (order.note) {
+          <div class="note">📝 {{ order.note }}</div>
+        }
+      </div>
+
+      <!-- TOTAL STRIP -->
+      <div class="total-strip">
+        <span>{{ itemCount(order) }} פריטים</span>
+        <span class="total-amt">₪{{ order.total }}</span>
+      </div>
+
+      <!-- FOOTER ACTIONS -->
+      <div class="card-foot">
+        @if (order.status !== 'done') {
+          <button class="btn sm muted" (click)="cancelOrder(order)" title="ביטול">✕</button>
+        }
+        @switch (order.status) {
+          @case ('new') {
+            <button class="btn blue" (click)="setStatus(order, 'preparing')">▶ התחל הכנה</button>
+          }
+          @case ('preparing') {
+            <button class="btn green" (click)="setStatus(order, 'ready')">✓ סיים הכנה</button>
+          }
+          @case ('ready') {
+            <button class="btn primary" (click)="setStatus(order, 'done')">📤 נמסר</button>
+          }
+          @case ('done') {
+            <button class="btn" (click)="setStatus(order, 'preparing')">החזר לפעיל</button>
+          }
+        }
+      </div>
+
+    </div>
+  }
+</div>
+
+<app-toast #toast/>
+<app-confirm-dialog #confirm/>
